@@ -1,0 +1,14 @@
+{
+  "name": "grolla05-plugins",
+  "description": "Plugins do Claude para impressão 3D com Autodesk Fusion e Bambu Lab",
+  "owner": {
+    "name": "Felipe Grolla"
+  },
+  "plugins": [
+    {
+      "name": "generate-bambu",
+      "source": "./plugins/generate-bambu",
+      "description": "Modela peças no Autodesk Fusion via MCP, exporta .3mf multicor e prepara a impressão no Bambu Studio, com aprovação humana antes de imprimir."
+    }
+  ]
+}
