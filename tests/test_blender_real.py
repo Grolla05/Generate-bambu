@@ -113,7 +113,7 @@ b.imprimir_json(b.validar())
     [
         ('caixa("cubo", 0, 0, 0, "#e8b647")', "contrato"),
         ('caixa("slot5_x", 0, 0, 0, "#e8b647")', "contrato"),
-        ('o = caixa("slot1_x", 0, 0, 0, "#e8b647"); o.data.materials.clear()', "bubble_"),
+        ('o = caixa("slot1_x", 0, 0, 0, "#e8b647"); o.data.materials.clear()', "cor_"),
         ('caixa("slot1_x", 0, 0, 0, "#e8b647", 300, 10, 2)', "não cabe"),
         ('o = caixa("slot1_x", 0, 0, 0, "#e8b647"); bm = bmesh.new(); bm.from_mesh(o.data); '
          'bmesh.ops.delete(bm, geom=list(bm.faces)[:1], context="FACES_ONLY"); '

@@ -161,8 +161,16 @@ def test_recusa_mais_de_quatro_slots(tmp_path):
     corpos = [_corpo(n, f"slot{n}_peca", 0, 1) for n in range(1, 6)]
     entrada = _escrever_3mf(tmp_path / "bruto.3mf", corpos)
 
-    with pytest.raises(ValueError, match="AMS Lite tem 4"):
+    with pytest.raises(ValueError, match="a impressora tem 4"):
         agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"))
+
+
+def test_limite_de_slots_vem_da_impressora(tmp_path):
+    corpos = [_corpo(n, f"slot{n}_peca", 0, 1) for n in (1, 2, 3)]
+    entrada = _escrever_3mf(tmp_path / "bruto.3mf", corpos)
+
+    with pytest.raises(ValueError, match="fora de 1 a 2"):
+        agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"), max_slots=2)
 
 
 def test_recusa_unidade_que_nao_e_milimetro(tmp_path):
@@ -205,16 +213,14 @@ def test_avisa_cinza_padrao_do_fusion(tmp_path):
     assert any("cinza padrão" in a for a in rel["avisos"])
 
 
-def test_avisa_cores_diferentes_no_mesmo_slot(tmp_path):
+def test_recusa_cores_diferentes_no_mesmo_slot(tmp_path):
     entrada = _escrever_3mf(tmp_path / "bruto.3mf", [
         _corpo(1, "slot1_a", 0, 1),
         _corpo(2, "slot1_b", 1, 1, x0=3),
     ])
 
-    rel = agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"))
-
-    assert len(rel["objetos"]) == 1
-    assert any("cores diferentes" in a for a in rel["avisos"])
+    with pytest.raises(ValueError, match="cores diferentes"):
+        agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"))
 
 
 @pytest.mark.parametrize("nome", ["slot0_x", "slot5_base"])
@@ -225,12 +231,28 @@ def test_recusa_slot_fora_de_um_a_quatro(tmp_path, nome):
         agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"))
 
 
-@pytest.mark.parametrize("nome", ["slot10abc", "slot1", "base_slot1"])
+@pytest.mark.parametrize(
+    "nome", ["slot10abc", "slot1", "base_slot1", "SLOT1_x", "slot01_x", "slot1_"]
+)
 def test_recusa_nome_sem_contrato(tmp_path, nome):
     entrada = _escrever_3mf(tmp_path / "bruto.3mf", [_corpo(1, nome, 0, 1)])
 
     with pytest.raises(ValueError, match="sem prefixo"):
         agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"))
+
+
+def test_arquivo_cru_nao_passa_como_agrupado(entrada):
+    with pytest.raises(ValueError, match="não saiu do passo 3"):
+        ler_slots_fusion(str(entrada), agrupado=True)
+
+
+def test_arquivo_agrupado_passa_como_agrupado(entrada, tmp_path):
+    final = tmp_path / "final.3mf"
+    agrupar_por_slot(str(entrada), str(final))
+
+    slots, _ = ler_slots_fusion(str(final), agrupado=True)
+
+    assert [s["slot"] for s in slots] == ["slot1", "slot2"]
 
 
 def test_ler_slots_devolve_malha_agrupada(entrada):
@@ -263,5 +285,10 @@ def test_montar_avisa_slot_sem_cor(tmp_path):
 def test_montar_recusa_mais_de_quatro_slots(tmp_path):
     slots = [_slot(f"slot{i}") for i in range(1, 6)]
 
-    with pytest.raises(ValueError, match="AMS Lite tem 4"):
+    with pytest.raises(ValueError, match="a impressora tem 4"):
         montar_3mf(slots, str(tmp_path / "final.3mf"))
+
+
+def test_montar_respeita_limite_da_impressora(tmp_path):
+    with pytest.raises(ValueError, match="a impressora tem 1"):
+        montar_3mf([_slot("slot1"), _slot("slot2")], str(tmp_path / "final.3mf"), max_slots=1)

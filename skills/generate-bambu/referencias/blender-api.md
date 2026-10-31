@@ -71,7 +71,7 @@ baixo dá o visual low-poly.
 O mesmo do Fusion, porque o resto do fluxo depende dele:
 
 - **Cada cor é um objeto**, com nome `slotN_descricao`, N de 1 a 4.
-- **Material `bubble_#rrggbb`**, com `b.colorir(objeto, "#e8b647")`. A cor do arquivo
+- **Material `cor_#rrggbb`**, com `b.colorir(objeto, "#e8b647")`. A cor do arquivo
   vem do nome do material.
 - Objetos do mesmo `slotN_` podem se sobrepor: viram cascas da mesma cor.
 - **Cores diferentes não se sobrepõem.** Encostar pode; dividir volume é defeito.

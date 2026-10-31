@@ -2,13 +2,14 @@
 
 Por que existe: o Fusion exporta um <object> por corpo. Texto extrudado vira
 um corpo por letra, e corpos que não se tocam não podem ser unidos com Combine.
-Sem agrupar, "BUBBLE" chega ao Bambu Studio como 6 objetos, e cada letra
+Sem agrupar, "OBRIGADO" chega ao Bambu Studio como 7 objetos, e cada letra
 pede um clique de filamento.
 
-Regra de agrupamento: o nome do corpo começa com "slotN_", com N de 1 a 4
-(slot1_base, slot3_texto_B...). Todos os corpos com o mesmo "slotN" viram um
-objeto só, com várias cascas (shells) — válido em 3MF e lido normalmente pelo
-slicer. Corpo sem prefixo slotN_ é recusado: nome de corpo é contrato do fluxo.
+Regra de agrupamento: o nome do corpo começa com "slotN_", com N de 1 ao número
+de slots da impressora (slot1_base, slot3_texto_B...). Todos os corpos com o mesmo
+"slotN" viram um objeto só, com várias cascas (shells) — válido em 3MF e lido
+normalmente pelo slicer. Corpo sem prefixo slotN_ é recusado: nome de corpo é
+contrato do fluxo, e RE_SLOT e RE_COR são a fonte única dele.
 
 Cor: grava basematerials por objeto e colorgroup por triângulo — o Bambu
 Studio só reconhece a segunda forma em 3MF que não foi feito por ele.
@@ -28,8 +29,12 @@ from xml.sax.saxutils import escape
 NS_CORE = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
 NS_MAT = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02"
 APLICACAO = "generate-bambu 3.0.0"
-_RE_SLOT = re.compile(r"^slot(\d+)_", re.IGNORECASE)
-_RE_SLOT_AGRUPADO = re.compile(r"^slot(\d+)(?:_|$)", re.IGNORECASE)
+MAX_SLOTS = 4
+PREFIXO_COR = "cor_"
+RE_SLOT = re.compile(r"^slot(0|[1-9]\d*)_.+$")
+# bubble_ é o prefixo antigo: peças já salvas continuam válidas.
+RE_COR = re.compile(r"^(?:cor|bubble)_(#[0-9a-f]{6})$")
+_RE_SLOT_AGRUPADO = re.compile(r"^slot(0|[1-9]\d*)$")
 
 _CONTENT_TYPES = (
     '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -90,15 +95,16 @@ def _volume(verts, tris):
     return s / 6.0
 
 
-def ler_slots_fusion(entrada, agrupado=False):
+def ler_slots_fusion(entrada, agrupado=False, max_slots=MAX_SLOTS):
     """Lê o 3MF do Fusion e agrupa as malhas por slot.
 
     Devolve (slots, avisos). Cada slot é um dict com slot ("slot1"), cor, verts,
     tris e corpos, em ordem de N. Levanta ValueError se algum corpo não tiver
-    prefixo slotN_, se N sair de 1 a 4, ou se a unidade não for milímetro.
+    prefixo slotN_, se N sair de 1 a max_slots, se corpos do mesmo slot tiverem
+    cores diferentes, ou se a unidade não for milímetro.
     agrupado=True lê um arquivo que já passou por aqui: lá o nome é só "slotN".
     """
-    padrao = _RE_SLOT_AGRUPADO if agrupado else _RE_SLOT
+    padrao = _RE_SLOT_AGRUPADO if agrupado else RE_SLOT
     with zipfile.ZipFile(entrada) as z:
         raiz = ET.fromstring(z.read("3D/3dmodel.model"))
 
@@ -122,7 +128,7 @@ def ler_slots_fusion(entrada, agrupado=False):
         if not m:
             sem_slot.append(nome)
             continue
-        if not 1 <= int(m.group(1)) <= 4:
+        if not 1 <= int(m.group(1)) <= max_slots:
             fora.append(nome)
             continue
         slot = f"slot{int(m.group(1))}"
@@ -145,11 +151,15 @@ def ler_slots_fusion(entrada, agrupado=False):
             g["cores"].add(cor.upper())
         g["corpos"].append(nome)
 
+    if sem_slot and agrupado:
+        raise ValueError("objetos fora do contrato slotN: " + ", ".join(sem_slot)
+                         + " — este .3mf não saiu do passo 3")
     if sem_slot:
         raise ValueError("corpos sem prefixo slotN_: " + ", ".join(sem_slot)
-                         + " — renomeie no Fusion e exporte de novo")
+                         + " — renomeie no modelador e exporte de novo")
     if fora:
-        raise ValueError("slot fora de 1 a 4: " + ", ".join(fora) + " — o AMS Lite tem 4")
+        raise ValueError(f"slot fora de 1 a {max_slots}: " + ", ".join(fora)
+                         + f" — a impressora tem {max_slots} slots")
     if not grupos:
         raise ValueError("nenhum objeto com malha no arquivo")
 
@@ -157,15 +167,15 @@ def ler_slots_fusion(entrada, agrupado=False):
     for s in sorted(grupos, key=lambda n: int(n[4:])):
         g = grupos[s]
         if len(g["cores"]) > 1:
-            avisos.append(f"{s}: corpos com cores diferentes {sorted(g['cores'])}"
-                          " — usando a primeira")
+            raise ValueError(f"{s}: corpos com cores diferentes {sorted(g['cores'])}"
+                             " — um slot é um filamento")
         cor = sorted(g["cores"])[0] if g["cores"] else None
         slots.append({"slot": s, "cor": cor, "verts": g["verts"], "tris": g["tris"],
                       "corpos": g["corpos"]})
     return slots, avisos
 
 
-def montar_3mf(slots, saida, aplicacao=APLICACAO, avisos=()):
+def montar_3mf(slots, saida, aplicacao=APLICACAO, avisos=(), max_slots=MAX_SLOTS):
     """Grava um 3MF com um objeto por slot e devolve o relatório.
 
     slots: lista de dicts com slot, cor (#RRGGBBAA ou None), verts, tris e corpos,
@@ -175,8 +185,8 @@ def montar_3mf(slots, saida, aplicacao=APLICACAO, avisos=()):
     avisos = list(avisos)
     if not slots:
         raise ValueError("nenhum slot para gravar")
-    if len(slots) > 4:
-        raise ValueError(f"{len(slots)} slots: o AMS Lite tem 4")
+    if len(slots) > max_slots:
+        raise ValueError(f"{len(slots)} slots: a impressora tem {max_slots}")
 
     relatorio = []
     partes = ['<?xml version="1.0" encoding="UTF-8"?>',
@@ -188,7 +198,7 @@ def montar_3mf(slots, saida, aplicacao=APLICACAO, avisos=()):
     for s, cor in zip(slots, cores, strict=True):
         if cor in ("#A0A0A0FF", "#CCCCCCFF"):
             avisos.append(f"{s['slot']}: cinza padrão — algum corpo ficou sem"
-                          " cor bubble_#rrggbb")
+                          f" cor {PREFIXO_COR}#rrggbb")
         partes.append(f'<base name="{s["slot"]}" displaycolor="{cor}"/>')
     partes.append('</basematerials>')
     # Cor também POR TRIÂNGULO: é o que o Bambu Studio lê num 3MF de terceiro
@@ -228,12 +238,12 @@ def montar_3mf(slots, saida, aplicacao=APLICACAO, avisos=()):
             "tudo_fechado": all(o["fechada"] for o in relatorio)}
 
 
-def agrupar_por_slot(entrada, saida=None, aplicacao=APLICACAO):
+def agrupar_por_slot(entrada, saida=None, aplicacao=APLICACAO, max_slots=MAX_SLOTS):
     """Lê o 3MF do Fusion e reescreve com um objeto por slotN.
 
     entrada: .3mf exportado pelo Fusion. saida: caminho final (padrão: o mesmo).
     Devolve o relatório de montar_3mf(). Levanta ValueError nos casos de
-    ler_slots_fusion() e com mais de 4 slots.
+    ler_slots_fusion() e com mais de max_slots slots.
     """
-    slots, avisos = ler_slots_fusion(entrada)
-    return montar_3mf(slots, saida or entrada, aplicacao, avisos)
+    slots, avisos = ler_slots_fusion(entrada, max_slots=max_slots)
+    return montar_3mf(slots, saida or entrada, aplicacao, avisos, max_slots)

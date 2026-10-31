@@ -149,18 +149,19 @@ Contrato de corpos — é dele que o resto do fluxo depende:
   entre cores.
 - **Nome `slotN_descricao`** (`slot1_base`, `slot2_detalhe`, `slot3_texto_4`).
   O N é o slot do AMS; todos os corpos do mesmo slot têm a mesma cor.
-- **Appearance `bubble_#rrggbb`** em todo corpo (receita em `fusion-api.md`).
+- **Appearance `cor_#rrggbb`** em todo corpo (receita em `fusion-api.md`).
   É ela que leva a cor para o 3MF.
 - Texto vira um corpo por letra e não dá para unir: nomeie todas com o mesmo
   `slotN_` — o passo 3 junta.
 - Termine o último script com `app.activeViewport.fit()`.
 
 **1c. Validar.** Rode o script de validação de `fusion-api.md` com
-`readOnly: true`. Precisa dar: todo corpo sólido e com prefixo `slotN_`;
-alturas em múltiplos de camada; peça inteira em 250×250×250; no máximo 4
-slots; **nenhuma interferência** entre corpos; nenhuma cor padrão do Fusion.
-Qualquer falha é defeito de geometria, não opinião — conserte antes de
-mostrar. Confira também espessuras mínimas e balanços contra `fdm-a1.md`.
+`readOnly: true`. Precisa dar `ok: true`. Ele cobra: todo corpo sólido e com
+prefixo `slotN_`; alturas em múltiplos de camada; peça inteira em 250×250×250; no
+máximo 4 slots, com uma cor por slot; **nenhuma interferência** entre corpos;
+nenhuma cor padrão do Fusion. Qualquer item em `erros` é defeito de geometria, não
+opinião — conserte antes de mostrar. Confira também espessuras mínimas e balanços
+contra `fdm-a1.md`.
 
 **1d. Conferir com os olhos e salvar.** Screenshots `iso-top-right`, `front`
 e `top` com `fusion_mcp_read` (`queryType: "screenshot"`). Olhe de verdade:
