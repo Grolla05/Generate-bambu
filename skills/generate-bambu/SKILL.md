@@ -1,6 +1,11 @@
 ---
-name: "generate-bambu"
+name: generate-bambu
 description: "Modela peça para impressão 3D direto no Autodesk Fusion via MCP, numa sequência fixa: cria o design paramétrico no projeto Bubble Studio 3D, valida e mostra no Fusion, espera o OK, só então exporta o .3mf multicor (um objeto por slot do AMS, camada 0,12 mm), abre o Bambu Studio, carrega o projeto e pergunta antes de imprimir. Use em qualquer pedido de criar, desenhar, modelar ou projetar objeto para impressão 3D, placa, letreiro, chaveiro, lembrancinha, engrenagem, vaso, pote, suporte ou peça multicolor. Modelagem só pelo Fusion — sem SVG, sem Blender. Limite 250×250×250 mm (Bambu Lab A1)."
+license: MIT
+compatibility: "Windows; Autodesk Fusion com servidor MCP local ativo; Bambu Studio em inglês (testado na 02.08); Bambu Lab A1 com AMS Lite. Controle de tela é opcional."
+metadata:
+  author: Felipe Grolla
+  version: "1.0.0"
 ---
 
 # generate-bambu
