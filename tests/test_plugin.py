@@ -3,7 +3,7 @@
 import json
 import re
 
-from conftest import PLUGIN, RAIZ, SKILL
+from conftest import PLUGIN, RAIZ, SKILL, ler_frontmatter
 
 
 def _json(caminho):
@@ -31,15 +31,10 @@ def test_marketplace_aponta_para_o_plugin():
 
 
 def test_skill_tem_frontmatter_valido():
-    texto = (SKILL / "SKILL.md").read_text(encoding="utf-8")
-    m = re.match(r"---\r?\n(.*?)\r?\n---", texto, re.DOTALL)
-    assert m, "SKILL.md precisa começar com frontmatter YAML"
+    campos = ler_frontmatter()
 
-    campos = dict(
-        re.findall(r'^(name|description):\s*"?(.+?)"?\s*$', m.group(1), re.MULTILINE)
-    )
-    assert campos.get("name") == "generate-bambu"
-    assert campos.get("description")
+    assert campos["name"] == "generate-bambu"
+    assert isinstance(campos["description"], str) and campos["description"].strip()
 
 
 def test_arquivos_citados_na_skill_existem():
