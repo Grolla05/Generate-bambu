@@ -39,7 +39,7 @@ def test_skill_tem_frontmatter_valido():
 
 def test_arquivos_citados_na_skill_existem():
     texto = (SKILL / "SKILL.md").read_text(encoding="utf-8")
-    citados = set(re.findall(r"`((?:referencias|helpers)/[\w./-]+)`", texto))
+    citados = set(re.findall(r"`((?:referencias|helpers|scripts)/[\w./-]+)`", texto))
 
     assert citados, "o SKILL.md deveria citar referencias/ e helpers/"
     for rel in citados:

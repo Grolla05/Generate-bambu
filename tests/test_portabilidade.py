@@ -48,6 +48,7 @@ CAMPOS_ANTIGRAVITY = {
     "extensions",
 }
 CAPACIDADES = [
+    "rodar script",
     "abrir programa",
     "esperar",
     "capturar tela",
@@ -160,6 +161,29 @@ def test_openai_yaml_declara_o_fusion():
             "url": URL_FUSION,
         }
     ]
+
+
+@pytest.mark.parametrize("rel", JSONS)
+def test_controle_de_tela_fica_fora_dos_manifestos(rel):
+    assert "windows-mcp" not in (RAIZ / rel).read_text(encoding="utf-8").lower()
+
+
+def test_mcp_do_blender_tambem_fica_fora_dos_manifestos():
+    # executa código sem guarda: só entra por escolha de quem instala
+    for rel in JSONS:
+        assert "blender" not in json.dumps(_json(rel).get("mcpServers", {})).lower()
+
+
+def test_skill_manda_o_usuario_clicar_em_imprimir():
+    assert "Nenhum script desta skill envia peça para a" in _skill_md()
+    arquivos = (SKILL / "scripts").glob("*.py")
+    assert not [p.name for p in arquivos if p.name in ("imprimir.py", "enviar.py")]
+
+
+def test_versao_do_helper_bate_com_a_skill():
+    from agrupar_3mf import APLICACAO
+
+    assert APLICACAO == f"generate-bambu {ler_frontmatter()['metadata']['version']}"
 
 
 def test_skill_nao_cita_ferramenta_de_um_agente_so():

@@ -1,52 +1,62 @@
 ---
 name: generate-bambu
-description: "Modela e prepara peças para impressão 3D multicor no Autodesk Fusion e no Bambu Studio. Use para criar, desenhar, projetar ou modelar placa, letreiro, chaveiro, lembrancinha, ímã, porta-copo, vaso, pote, caixa, suporte, engrenagem ou peça multicolor. Use for 3D print, 3D model, keychain, nameplate, sign, coaster, vase, box, bracket, gear, multicolor, 3MF, Bambu Lab, AMS, Fusion. Não use para SVG ou desenho 2D que não vá para impressão 3D."
+description: "Modela e prepara peças para impressão 3D multicor no Autodesk Fusion ou no Blender, com fatiamento no Bambu Studio. Use para criar, desenhar, projetar ou modelar placa, letreiro, chaveiro, lembrancinha, ímã, porta-copo, vaso, pote, caixa, suporte, engrenagem, bicho, boneco low-poly ou peça multicolor. Use for 3D print, 3D model, keychain, nameplate, sign, coaster, vase, box, bracket, gear, multicolor, 3MF, Bambu Lab, AMS, Fusion. Não use para SVG ou desenho 2D que não vá para impressão 3D."
 license: MIT
-compatibility: "Windows; Autodesk Fusion com servidor MCP local ativo; Bambu Studio em inglês (testado na 02.08); Bambu Lab A1 com AMS Lite. Controle de tela é opcional."
+compatibility: "Windows; Python 3.10+; Autodesk Fusion com servidor MCP local ativo ou Blender 5.1+; Bambu Studio testado na 02.08.03.66; Bambu Lab A1 com AMS Lite. Controle de tela é opcional."
 metadata:
   author: Felipe Grolla
-  version: "2.1.0"
+  version: "3.0.0"
 ---
 
 # generate-bambu
 
-Uma sequência fixa de seis passos, do Fusion à impressora. Não pule passo,
+Uma sequência fixa de seis passos, do modelador à impressora. Não pule passo,
 não troque a ordem, e não substitua o que cada passo entrega.
 
 ```
-1. modelar no Fusion + validar + mostrar
+1. modelar no Fusion ou no Blender + validar + mostrar
 2. esperar o OK do usuário
 3. exportar o .3mf multicor, camada 0,12 mm
-4. abrir o Bambu Studio
-5. carregar o projeto e conferir
+4. fatiar por script
+5. abrir no Bambu Studio e conferir
 6. perguntar antes de imprimir
 ```
 
 **Seis regras que valem o fluxo inteiro:**
 
-- **A modelagem é no Fusion, e só.** Toda geometria nasce por script no
-  Fusion via `fusion_mcp_execute`. Nunca gere SVG, malha em Python, OpenSCAD,
-  CadQuery ou Blender como substituto. Se o Fusion não responder, pare e peça
-  para o usuário abri-lo (passo 0).
-- **A saída é `.3mf`, e só.** Nunca ZIP, nunca STL, nunca OBJ, nunca uma pasta
-  de arquivos. Um objeto por slot do AMS, dentro de um `.3mf` só.
-- **A prévia é o design aberto no Fusion.** O usuário gira a peça lá, na tela
+- **Um modelador por peça, escolhido no passo 0.** Toda geometria nasce por
+  script: no Fusion via `fusion_mcp_execute`, ou no Blender. Medida exata é
+  sempre Fusion. Nunca gere SVG, OpenSCAD, CadQuery ou malha solta em Python como
+  substituto, e não troque de modelador em silêncio se o escolhido não responder.
+- **A saída é `.3mf`, e só.** Nunca ZIP, nunca STL, nunca OBJ. São dois
+  arquivos: o `.3mf` da peça, com um objeto por slot do AMS, e o fatiado que
+  sai dele em `_fatiados/`.
+- **A prévia é a peça aberta no modelador.** O usuário gira a peça lá, na tela
   dele. Seus screenshots servem para **você** conferir o que construiu antes
-  de mostrar — não são a prévia, e nunca substituem o design aberto.
-- **Nada de "de memória".** Se for falar do que está na tela do Fusion ou do
+  de mostrar — não são a prévia, e nunca substituem o arquivo aberto.
+- **Nada de "de memória".** Se for falar do que está na tela do modelador ou do
   Bambu Studio, capture a tela e leia. Se não conseguir, diga isso e peça o
   dado ao usuário. Nunca presuma.
 - **O `.3mf` só nasce depois do OK.** O passo 1 modela e salva o design, mas
   não exporta arquivo de impressão nenhum.
-- **Imprimir só com "sim" explícito.** Nem a aprovação da forma nem um pedido
-  feito antes valem pelo passo 6: a pergunta vem depois do slice.
+- **Você nunca imprime.** Nenhum script desta skill envia peça para a
+  impressora. Quem clica em *Print plate* é o usuário, sempre. Controle de tela
+  não clica nesse botão nem em *Send*, nem depois de um "sim".
 
 Arquivos desta skill (leia sob demanda):
 
 | Arquivo | Quando |
 |---|---|
-| `referencias/fusion-api.md` | sempre — receitas testadas de script, validação, cor, exportação |
+| `referencias/fusion-api.md` | peça no Fusion — receitas testadas de script, validação, cor, exportação |
+| `referencias/blender-api.md` | peça no Blender — receitas testadas |
+| `helpers/blender_3mf.py` | peça no Blender — importe no script |
+| `scripts/detectar_modeladores.py` | passo 0 — qual modelador usar |
 | `helpers/agrupar_3mf.py` | passo 3 — cole inteiro no script de exportação |
+| `scripts/diagnostico.py` | passo 0 — o que está pronto nesta máquina |
+| `scripts/fatiar.py` | passo 4 — fatia sem clique e devolve tempo e gramas |
+| `scripts/status.py` | passo 6 e depois — só leitura, e só se o usuário pedir |
+| `scripts/config.py` | pasta de saída, Bambu Studio, impressora |
+| `referencias/bambu-cliques.md` | plano B, se o passo 4 falhar |
 | `referencias/fdm-a1.md` | ao decidir espessura, folga, orientação, balanço |
 | `referencias/limites.md` | quando o pedido não couber no método |
 | `referencias/agentes.md` | para traduzir uma capacidade na ferramenta do seu agente, ou ligar o MCP do Fusion |
@@ -74,10 +84,10 @@ venda a linha é mais firme — a nota de Risco Jurídico do projeto trata disso
 **2. O pedido é geometria construída?** Placa, letreiro, chaveiro,
 lembrancinha, ímã, porta-copo, quadro em relevo, engrenagem, vaso, pote,
 suporte, caixa com tampa, peça com rosca ou encaixe: sim — o Fusion faz
-booleana, fillet, chamfer, shell, rosca e texto. Rosto, corpo, animal
-realista: **não** — diga na primeira resposta. Aqui, sim, uma versão
-estilizada é boa saída, porque o assunto não é de ninguém: ofereça e, se o
-usuário topar, **modele e mostre**.
+booleana, fillet, chamfer, shell, rosca e texto. Bicho, boneco e forma orgânica
+de ninguém: versão estilizada ou low-poly no Blender. Realismo, não — diga na
+primeira resposta e ofereça a versão estilizada: se o usuário topar, **modele e
+mostre**.
 
 **3. Quantas cores?** O AMS Lite tem 4 slots. Uma cor = um `slotN` = um
 objeto no 3MF = um filamento. Acima de 2 cores, avise do custo de purga.
@@ -85,20 +95,37 @@ objeto no 3MF = um filamento. Acima de 2 cores, avise do custo de purga.
 **4. Cabe na mesa?** O limite é 250×250×250 mm (Bambu Lab A1). Peça maior:
 diga na primeira resposta e proponha dividir ou reduzir.
 
-**5. O Fusion está respondendo?** `fusion_mcp_read` com
-`{queryType: "document", operation: "open"}`. Se der erro ou não responder,
-diga que o Fusion não está acessível e peça para o usuário abri-lo (ou abra o
-programa, se tiver controle de tela). Se ele já estiver aberto, peça para
-ligar o servidor em Preferences → General → API → Fusion MCP Server, com
-*Apply* e depois *OK*. Não siga sem ele.
+**5. Qual modelador?** Rode `python scripts/detectar_modeladores.py --tipo
+preciso|organico|qualquer`. Preciso é medida exata, rosca, encaixe ou texto;
+orgânico é o estilizado do item 2; qualquer é o que serve nos dois. Siga
+`escolha.modelador` e diga em uma linha qual foi e por quê. Se `perguntar` vier
+`true`, pergunte uma vez e grave em `modelador.preferido`. Sem modelador e sem
+pergunta, passe o `motivo` e pare.
+
+**6. O modelador responde?** No Fusion, rode `python scripts/diagnostico.py`. Se
+`fusion.estado` for `respondendo`, siga. Nos outros casos, passe a `instrucao`
+que ele devolve. Não siga sem ele. No Blender, veja `referencias/blender-api.md`:
+com MCP, `get_objects_summary` prova a conexão; sem MCP, o script roda por
+terminal.
+
+Sem terminal, teste o Fusion com `fusion_mcp_read`, `{queryType: "document", operation:
+"open"}`. Se der erro, peça para o usuário abrir o Fusion e ligar Preferences →
+General → API → Fusion MCP Server, com *Apply* e depois *OK*.
+
+**7. Para onde vai o arquivo?** Se `pasta_saida.caminho` vier vazio, pergunte
+qual pasta usar e grave com `python scripts/config.py definir pasta_saida
+"<pasta>"`.
 
 `referencias/limites.md` tem a triagem completa.
 
 ---
 
-## Passo 1 — Modelar no Fusion, validar e mostrar
+## Passo 1 — Modelar, validar e mostrar
 
-O passo mais longo, e o único que o usuário vê antes de decidir. Leia
+O passo mais longo, e o único que o usuário vê antes de decidir. **No Blender,
+siga `referencias/blender-api.md` em vez de 1a a 1d:** script com parâmetros no
+topo, mesmo contrato de corpos, `validar()` e o `.blend` salvo na pasta de saída
+para o usuário abrir. Depois, 1e vale igual. O resto deste passo é do Fusion: leia
 `referencias/fusion-api.md` antes do primeiro script.
 
 **1a. Documento novo.** Um documento por peça: design **paramétrico**,
@@ -158,7 +185,8 @@ houve; e os avisos que importam.
 passado também não conta — ela diz que a geometria é válida, não que a peça
 ficou boa. Quem aprova a forma é quem vai usar ou vender a peça.
 
-**Se pedir ajuste:** mude os *User Parameters* (`expression`) quando o ajuste
+**Se pedir ajuste no Blender:** mude os parâmetros no topo do script e rode de
+novo, do começo. No Fusion, mude os *User Parameters* (`expression`) quando o ajuste
 for de medida, ou rode um script de correção; `fusion_mcp_update → undo`
 desfaz o último script. Sempre no **mesmo documento**: valide de novo (1c),
 confira (1d) e salve como nova versão (`save`), para o histórico ficar numa
@@ -173,10 +201,11 @@ diga as dimensões numa linha — custa segundos.
 
 Só agora, e só com o OK na mão.
 
-Um script que: exporta o componente raiz em 3MF com
+**No Blender:** `b.exportar(...)`, de `referencias/blender-api.md`. **No Fusion:**
+um script que: exporta o componente raiz em 3MF com
 `MeshRefinementHigh` para um arquivo temporário; passa por
 `agrupar_por_slot()` (cole `helpers/agrupar_3mf.py` inteiro no começo do
-script) gravando o final em `D:/Bambu Lab/projeto/<nome-da-peca>.3mf`; apaga o
+script) gravando o final em `<pasta_saida>/<nome-da-peca>.3mf`; apaga o
 temporário; imprime o relatório. Receita pronta em `fusion-api.md`.
 
 Do mesmo design que ele aprovou, sem remodelar nada — remodelar abriria
@@ -192,113 +221,62 @@ Um arquivo. Nada de ZIP, nada de pasta com várias peças soltas, nada de STL.
 
 ---
 
-## Passo 4 — Abrir o Bambu Studio
+## Passo 4 — Fatiar por script
 
-Os passos 4 e 5 pedem controle de tela. **Sem ele, vá direto para "Sem
-controle de tela", depois do passo 6.** Não finja que abriu nada.
+```
+python scripts/fatiar.py "<pasta_saida>/<nome-da-peca>.3mf" --abrir
+```
 
-Assuma sempre que está fechado. Interface em **inglês**.
+Sem clique e sem diálogo. O script monta um projeto nativo do Bambu Studio com
+os perfis da configuração (0,12 mm, e primeira camada de 0,24 mm para as alturas
+seguirem múltiplos da camada), fatia e grava em
+`<pasta_saida>/_fatiados/<nome-da-peca>/<nome-da-peca>.gcode.3mf`. Ele não fala
+com a impressora.
 
-Peça acesso ao Bambu Studio, abra o programa, espere ~5 s e **capture a
-tela**.
+O JSON traz `tempo_s`, `peso_g`, `camadas`, `camada_mm`, `dimensoes_mm`,
+`filamentos` e `avisos`. Compare `dimensoes_mm` com o que o modelador mostrou. Se o
+script achar divergência de camada, de filamentos ou de dimensões, ele sai com
+erro, e o erro é real: corrija a causa.
 
-Ele demora e costuma abrir com algo na frente: update (*Later*), release notes
-(*OK*), login (pode ignorar), ou seleção de impressora na primeira execução
-(**Bambu Lab A1**). Feche o que estiver na frente e maximize a janela — botão
-fora da área visível é a causa mais comum de clique que não acontece.
+Peça multicor deixa lugar para a torre de purga no canto da mesa. Com os dois
+lados acima de 195 mm, o script recusa: proponha reduzir um lado ou usar uma cor.
 
-Controle de tela é frágil: **capture a tela antes de cada ação que muda
-estado, e depois para confirmar que mudou.** Nunca encadeie três cliques às
-cegas. Prefira atalho de teclado a clique.
+| Código | Quer dizer | O que fazer |
+|---|---|---|
+| 2 | entrada inválida, ou peça não cabe | corrija e exporte de novo |
+| 3 | Bambu Studio recusou | leia `erro`; se não resolver, siga o plano B |
+| 4 | Bambu Studio não encontrado | peça o caminho e grave em `bambu_studio.exe` |
 
-Se tiver controle de tela e ainda assim não conseguir abrir, **diga que não
-conseguiu** e siga "Sem controle de tela". Não descreva o que o programa faria.
+**Plano B:** `referencias/bambu-cliques.md`, se o script falhar ou não houver
+Python. Nunca invente tempo ou gramas.
 
 ---
 
-## Passo 5 — Carregar o projeto e conferir
+## Passo 5 — Abrir e conferir
 
-**Carregar.** `Ctrl+O` (File → Open Project). No diálogo do Windows **não
-navegue pelas pastas**: clique no campo *File name*, digite o caminho completo
-e tecle `Enter`. O espaço em `D:\Bambu Lab` não precisa de aspas. Se perguntar entre abrir como projeto ou importar geometria, escolha
-projeto.
+O `--abrir` mostra o fatiado no Bambu Studio. Ele abre direto na pré-visualização,
+sem diálogo, com a peça colorida, o perfil de 0,12 mm e o botão *Print plate*.
 
-**Dois diálogos aparecem, nesta ordem — testados:**
+Diga para o usuário conferir ali as cores, o relevo em cima da base e os rolos
+carregados. Não afirme o que está na tela sem ver: sem captura de tela, pergunte.
 
-1. *Standard 3mf Import color* — o Bambu Studio leu as cores do arquivo e
-   mostra a prévia já colorida e uma tabela *Matching* (cor → filamento).
-   Capture a tela e confira: uma cor por slot, prévia com as cores certas. Se
-   *Sync info* já trouxe os filamentos do AMS, use *Color match* para casar
-   com os rolos carregados; senão o padrão *Append* cria um filamento novo
-   por cor. Então *OK*.
-2. *Multi-part object detected* ("objects positioned at multiple heights") —
-   responda **Yes**, sempre. Com *No*, cada slot vira objeto separado e cai
-   para a mesa: o relevo e o texto descolam da base.
-
-O aviso laranja "The 3mf is not from Bambu Lab, load geometry data and color
-data only" é normal: o perfil de impressão não vem no arquivo.
-
-**Conferir as dimensões — não pule.** Selecione e leia o painel *Size*. Os
-números têm que bater com o que o Fusion mostrou. Peça 1000× menor ou maior é
-erro de unidade — volte ao passo 3 e reexporte, **não conserte escalando
-aqui**: o erro volta na próxima peça.
-
-**Altura de camada 0,12 mm.** No painel de processo à direita, escolha o
-perfil de 0.12 mm (na A1 costuma aparecer como *0.12mm Fine*) ou abra as
-configurações e ponha `0.12` em *Layer height*. Capture a tela para confirmar
-que pegou. Isto não vem no arquivo: o 3MF carrega geometria e cor, não o perfil de
-impressão.
-
-**Conferir os filamentos.** A lista de objetos mostra um objeto com as
-partes `slot1`, `slot2`… — todas com *Fila. 1*, e isso é normal: a cor vem
-pintada na malha, não pela coluna. Quem manda é a pintura e a tabela do
-diálogo de cor. Confira na pré-visualização colorida que cada região está na
-cor certa, e depois do slice que a lista de filamentos usados tem um por cor.
-O número do filamento tem que ser o do rolo certo no AMS — quem decide o slot
-é o Bambu Studio, não o arquivo.
-
-**Fatiar.** *Slice plate* ou `Ctrl+R`. Espere; capture a tela para confirmar —
-a tela vira pré-visualização de camadas e o botão vira *Print plate*. Se falhar,
-o motivo aparece em vermelho: objeto fora da área, malha não-manifold, ou
-nenhum filamento configurado (PLA Basic serve de default). Malha não-manifold
-não deveria chegar aqui — os passos 1 e 3 pegam isso.
-
-**Quando travar.** Se um clique não produzir o efeito esperado, não repita —
-capture a tela e leia (quase sempre há um diálogo na frente, ou a
-janela perdeu o foco). Duas ou três tentativas, então pare, descreva o que
-está na tela e pergunte. O usuário está na frente do computador.
+**Sobre os rolos.** Cada `slotN` deveria estar na bandeja N do AMS, mas quem casa
+filamento com bandeja é a janela de envio do Bambu Studio. Se o usuário quiser,
+`python scripts/status.py --conferir <fatiado>` compara os slots com o que a A1
+informa. Use só com pedido dele: é leitura, mas fala com a impressora.
 
 ---
 
 ## Passo 6 — Perguntar antes de imprimir
 
-Depois do slice, colete da tela o **tempo estimado** e o **consumo em gramas**
-(por filamento, em peça multicor). Confirme que a altura de camada ficou em
-0,12 mm.
+Mostre **tempo estimado**, **gramas por filamento** e confirme a camada de 0,12 mm.
 
-Então pergunte: **posso mandar imprimir?**
+Então diga que está pronto e que imprimir é com ele: **clicar em *Print plate* no
+Bambu Studio**.
 
-**Pare aqui.** Não clique em *Print plate* → *Send*, nem em *Send and print*,
-sem a resposta. A peça vira plástico e tempo de máquina a partir desse clique.
-
----
-
-## Sem controle de tela
-
-Se o seu agente não controla a tela, os passos 1 a 3 valem iguais e os passos
-4 a 6 viram um roteiro para o usuário. A regra de não inventar continua: tudo
-que você disser sobre o Bambu Studio vem do que ele informar.
-
-1. Dê o caminho completo do `.3mf`.
-2. Passe as instruções do passo 5, nesta ordem: abrir com `Ctrl+O`; no
-   diálogo de cor, conferir e dar *OK*; em *Multi-part object detected*,
-   responder **Yes**; escolher o perfil de 0,12 mm; fatiar com `Ctrl+R`.
-3. Peça os números: tamanho em X, Y e Z no painel *Size*, altura de camada,
-   tempo estimado e gramas por filamento.
-4. Compare o tamanho com o que o Fusion mostrou. Se não bater, volte ao passo
-   3 e reexporte, sem escalar no Bambu Studio.
-5. Feche com a pergunta do passo 6. Quem clica em *Print plate* é o usuário:
-   nunca diga que a peça foi enviada.
+**Pare aqui.** Não há comando nesta skill que envie a peça, e controle de tela não
+clica em *Print plate* nem em *Send*. Nunca diga que a peça foi enviada. A peça
+vira plástico e tempo de máquina a partir desse clique.
 
 ---
 
@@ -321,7 +299,7 @@ dependência de autorização de criador** (ver o bloqueio de licença da tabela
 
 IDs autorais usam prefixo **A** (A01, A02…) para não colidir com os P## da
 planilha da MakerWorld. Em *Arquivo*, ponha o `.3mf` e o nome do documento no
-Fusion. Leia a nota, continue a numeração e insira só a linha nova — não
+modelador. Leia a nota, continue a numeração e insira só a linha nova — não
 reescreva a nota. Sem acesso ao vault, devolva a linha Markdown pronta para o
 usuário colar. Sem tempo e gramas, não registre nem invente: diga que o
 registro ficou pendente.
@@ -331,13 +309,13 @@ Na primeira peça registrada, vale dizer o gancho: a nota documenta que 8 dos
 Peça autoral não tem esse problema — é a saída do gargalo que a nota aponta.
 
 **Licença do Fusion.** A licença atual é Education (uso não comercial), e o
-usuário modela no Fusion para uso próprio e presentes. Se a peça registrada
-for para **venda**, lembre em uma linha que a licença do Fusion precisa ser
-revista antes.
+usuário modela no Fusion para uso próprio e presentes. Se a peça registrada no
+Fusion for para **venda**, lembre em uma linha que a licença precisa ser revista
+antes. O Blender não tem essa trava.
 
 ---
 
-## Operações comuns
+## Operações comuns no Fusion
 
 | Peça | Como no Fusion |
 |---|---|
@@ -365,5 +343,5 @@ sobrar nos furos é a **folga de processo** da máquina: grave no parâmetro
 ## Se o usuário não estiver acompanhando
 
 O passo 2 é parada obrigatória. Se ele não responder, pare ali: modele,
-valide, confira, salve o design no Fusion, deixe tudo pronto com a mensagem de
-validação. Não exporte o `.3mf`, não abra o Bambu Studio, não imprima.
+valide, confira, salve a peça no modelador, deixe tudo pronto com a mensagem de
+validação. Não exporte o `.3mf`, não fatie, não abra o Bambu Studio.

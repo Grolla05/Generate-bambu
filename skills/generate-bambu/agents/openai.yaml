@@ -1,6 +1,6 @@
 interface:
   display_name: "Generate Bambu"
-  short_description: "Modela no Fusion e prepara impressão multicor no Bambu Studio"
+  short_description: "Modela no Fusion ou no Blender e fatia multicor no Bambu Studio"
   brand_color: "#00AE42"
   default_prompt: "Modele uma peça para impressão 3D multicor"
 

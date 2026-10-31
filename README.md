@@ -2,7 +2,7 @@
 
 # 🖨️ generate-bambu
 
-**Peça uma peça. Seu agente modela no Fusion, valida, exporta o `.3mf` multicor e deixa pronto no Bambu Studio.**
+**Peça uma peça. Seu agente modela no Fusion ou no Blender, valida, exporta o `.3mf` multicor, fatia e deixa pronto no Bambu Studio.**
 
 *Uma skill para Claude, Codex, Gemini CLI e Antigravity que leva uma ideia da conversa até a mesa da impressora, com você aprovando cada passo importante.*
 
@@ -40,7 +40,7 @@ Este projeto nasceu de um problema simples: **comprei uma impressora 3D sem sabe
 A solução foi transformar o processo em uma **skill**: uma sequência fixa de seis passos que vai do pedido em linguagem natural até o projeto fatiado no Bambu Studio. O agente cuida da parte repetitiva e técnica. As decisões que importam continuam sendo suas: **você aprova a forma antes de exportar e confirma antes de imprimir**.
 
 > [!NOTE]
-> A skill é focada em **geometria construída**: placas, letreiros, chaveiros, lembrancinhas, ímãs, vasos, potes, caixas com tampa, suportes, engrenagens e peças com rosca ou encaixe. Rostos, corpos e animais realistas ficam fora do método (veja [Limitações](#-limitações)).
+> **Geometria construída** (placas, letreiros, chaveiros, ímãs, vasos, caixas, suportes, engrenagens, peças com rosca ou encaixe) vai para o Fusion. **Forma orgânica estilizada** (bichos e bonecos low-poly) vai para o Blender. Realismo fica fora do método (veja [Limitações](#-limitações)).
 
 ---
 
@@ -48,15 +48,15 @@ A solução foi transformar o processo em uma **skill**: uma sequência fixa de 
 
 ```mermaid
 flowchart LR
-    A["💬 Você pede a peça"] --> B["🧩 1. Modela no Fusion"]
+    A["💬 Você pede a peça"] --> B["🧩 1. Modela no Fusion ou no Blender"]
     B --> C["✅ Valida e mostra"]
     C --> D{"👤 2. Você aprova?"}
     D -- "pede ajuste" --> B
     D -- "OK" --> E["📦 3. Exporta .3mf"]
-    E --> F["🖥️ 4. Abre o Bambu Studio"]
-    F --> G["🔍 5. Carrega e confere"]
-    G --> H{"🖨️ 6. Posso imprimir?"}
-    H -- "sim" --> I["🎉 Impressão"]
+    E --> F["🔪 4. Fatia por script"]
+    F --> G["🔍 5. Abre e confere"]
+    G --> H["⏱️ 6. Tempo e gramas"]
+    H --> I["👤 Você clica em Print plate"]
 ```
 
 | # | Passo | O que acontece |
@@ -64,9 +64,9 @@ flowchart LR
 | **1** | 🧩 **Modelar, validar e mostrar** | O agente cria um design **paramétrico** no Fusion, via script. Cada cor é um corpo separado (`slotN_descricao`). Roda uma validação automática e deixa a peça aberta no Fusion para você girar e inspecionar. |
 | **2** | 👤 **Esperar o OK** | Parada obrigatória. Se pedir ajuste, o agente muda os parâmetros no **mesmo documento**, valida de novo e salva uma nova versão. |
 | **3** | 📦 **Exportar o `.3mf`** | Só depois do OK. Um único `.3mf` com **um objeto por slot do AMS**, camada de 0,12 mm. Sem STL, sem ZIP, sem pasta de arquivos soltos. |
-| **4** | 🖥️ **Abrir o Bambu Studio** | O agente abre o programa e trata janelas de update, login e seleção de impressora. Sem controle de tela, ele passa um roteiro para você. |
-| **5** | 🔍 **Carregar e conferir** | Abre o projeto, confere cores, **dimensões** (contra o que o Fusion mostrou) e filamentos, e fatia. |
-| **6** | 🖨️ **Perguntar antes de imprimir** | Mostra o **tempo estimado** e os **gramas por filamento**, e só manda imprimir com a sua resposta. |
+| **4** | 🔪 **Fatiar por script** | `scripts/fatiar.py` usa o CLI do Bambu Studio, sem clique e sem diálogo, e confere camada, filamentos e **dimensões**. Funciona em qualquer agente com terminal. |
+| **5** | 🔍 **Abrir e conferir** | O fatiado abre no Bambu Studio já colorido, para você conferir. |
+| **6** | ⏱️ **Pronto para imprimir** | Mostra o **tempo estimado** e os **gramas por filamento**. **A skill nunca imprime:** quem clica em *Print plate* é você. |
 
 ### ✅ O que a validação garante (passo 1)
 
@@ -135,17 +135,19 @@ flowchart LR
 | Requisito | Detalhe |
 |---|---|
 | 🤖 **Agente** | Claude, Codex, Gemini CLI ou Antigravity |
-| 🧩 **Autodesk Fusion** | Instalado, com o **servidor MCP local** ativo em Preferences → General → API → Fusion MCP Server (*Apply* e depois *OK*). A skill modela via `fusion_mcp_execute` |
+| 🧩 **Autodesk Fusion** | Para peça de medida exata. Instalado, com o **servidor MCP local** ativo em Preferences → General → API → Fusion MCP Server (*Apply* e depois *OK*) |
+| 🐒 **Blender** | Opcional, para forma orgânica estilizada. 5.1 ou mais novo; roda por terminal, com MCP opcional |
 | 🖨️ **Impressora** | Bambu Lab **A1** com **AMS Lite** (até 4 cores) |
-| 🖥️ **Bambu Studio** | Instalado, com a interface em **inglês** (testado na 02.08) |
+| 🖥️ **Bambu Studio** | Instalado (testado na 02.08.03.66) |
+| 🐍 **Python** | 3.10 ou mais novo, para fatiar pelo CLI. Sem ele, vale o [plano B por cliques](skills/generate-bambu/referencias/bambu-cliques.md) |
 | 🪟 **Sistema** | Windows (os caminhos e o fluxo do Bambu Studio foram testados nele) |
-| 🖱️ **Controle do computador** | Opcional. Com ele, o agente opera o Bambu Studio nos passos 4 a 6. Sem ele, o agente passa um roteiro e você informa tamanho, tempo e gramas |
+| 🖱️ **Controle do computador** | Opcional, só para o plano B. Nunca clica em *Print plate* |
 
 > [!IMPORTANT]
-> Os passos 1 a 3 (modelar, validar e exportar) só dependem do Fusion. O que muda entre agentes está em [`referencias/agentes.md`](skills/generate-bambu/referencias/agentes.md).
+> O que muda entre agentes está em [`referencias/agentes.md`](skills/generate-bambu/referencias/agentes.md).
 
 > [!WARNING]
-> `D:\Bambu Lab\projeto\`, o projeto `Bubble Studio 3D` e a nota de catálogo são padrões do autor. Ajuste conforme a seção Configuração.
+> O projeto `Bubble Studio 3D` e a nota de catálogo são padrões do autor. Ajuste conforme a seção Configuração.
 
 ---
 
@@ -296,7 +298,7 @@ Cria uma lembrancinha de 70 x 50 mm com a data "12/10" e uma moldura em dourado.
 1. O agente confirma o que vai modelar e quantas cores a peça tem.
 2. A peça aparece **aberta no Fusion**, com as dimensões finais, a lista de slots (cor, altura, camadas) e os ajustes de camada que foram feitos.
 3. Ele pergunta se está aprovado. Você pede ajustes quantas vezes quiser.
-4. Com o OK, exporta, abre o Bambu Studio, fatia e mostra **tempo e gramas**. Sem controle de tela, ele entrega o `.3mf` e um roteiro para você.
+4. Com o OK, exporta, fatia e mostra **tempo e gramas**. Quem manda imprimir é você, no Bambu Studio.
 5. Ele pergunta **"posso mandar imprimir?"** e espera a sua resposta.
 
 ---
@@ -333,15 +335,28 @@ Generate-bambu/
 ├── skills/
 │   └── generate-bambu/
 │       ├── SKILL.md                # o fluxo de seis passos
+│       ├── config.example.json     # modelo da configuração local
 │       ├── agents/
 │       │   └── openai.yaml         # Codex: dependência do MCP e invocação
 │       ├── referencias/
 │       │   ├── agentes.md          # capacidades, instalação e MCP por agente
 │       │   ├── fusion-api.md       # receitas testadas de script, validação e exportação
+│       │   ├── blender-api.md      # receitas testadas para forma orgânica
+│       │   ├── bambu-cliques.md    # plano B por cliques
 │       │   ├── fdm-a1.md           # espessuras, folgas, orientação e balanços da A1
 │       │   └── limites.md          # triagem do que cabe (ou não) no método
-│       └── helpers/
-│           └── agrupar_3mf.py      # agrupa o 3MF em um objeto por slot
+│       ├── helpers/
+│       │   ├── agrupar_3mf.py      # agrupa o 3MF em um objeto por slot
+│       │   └── blender_3mf.py      # roda no Blender: valida e exporta
+│       └── scripts/
+│           ├── config.py           # configuração local e access code
+│           ├── diagnostico.py      # o que está pronto nesta máquina
+│           ├── detectar_modeladores.py  # qual modelador usar
+│           ├── fatiar.py           # fatia pelo CLI do Bambu Studio
+│           ├── projeto_bambu.py    # monta o projeto nativo
+│           ├── perfis.py           # resolve os perfis instalados
+│           ├── bambu_3mf.py        # lê tempo e gramas do fatiado
+│           └── status.py           # estado da impressora, só leitura
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                  # CI: lint, validação da skill, testes e instalador
@@ -361,12 +376,20 @@ Generate-bambu/
 
 ## ⚙️ Configuração
 
-Alguns caminhos do fluxo são pessoais e podem ser ajustados no `SKILL.md`:
+A configuração fica em `~/.generate-bambu/config.json`, fora da skill, porque atualizar o plugin troca a pasta dela. O modelo é [`config.example.json`](skills/generate-bambu/config.example.json):
+
+```bash
+python skills/generate-bambu/scripts/config.py definir pasta_saida "D:/Bambu Lab/projeto"
+```
+
+O access code da impressora só é necessário para `status.py`. Rode `config.py codigo` você mesmo, no terminal, para ele não passar pela conversa.
 
 | O quê | Padrão | Observação |
 |---|---|---|
-| Pasta de saída dos `.3mf` | `D:\Bambu Lab\projeto\` | Troque pela pasta que você usa |
-| Projeto no Fusion | `Bubble Studio 3D` | Criado automaticamente se não existir |
+| Pasta de saída dos `.3mf` | perguntada no primeiro uso | Chave `pasta_saida` |
+| Perfis do Bambu Studio | A1, `0.12mm Fine`, PLA Basic | Seção `bambu_studio` |
+| Modelador | escolhido peça a peça | `modelador.preferido` desempata |
+| Projeto no Fusion | `Bubble Studio 3D` | Criado automaticamente se não existir; ajuste em `SKILL.md` |
 | Altura de camada | `0,12 mm` | Parâmetro `camada` no início do design |
 | Registro no Obsidian | opcional | A skill pode anotar tempo e gramas de cada peça numa nota de catálogo. Remova a seção *"Depois: registrar no vault"* se não usar. |
 
@@ -378,7 +401,8 @@ Alguns caminhos do fluxo são pessoais e podem ser ajustados no `SKILL.md`:
 - **Até 4 cores**, pelos 4 slots do AMS Lite. Acima de 2 cores, o custo de purga de filamento sobe.
 - **Volume de 250 × 250 × 250 mm**, o limite da Bambu Lab A1.
 - **O perfil de impressão não vem no `.3mf`.** A altura de camada de 0,12 mm é ajustada no Bambu Studio a cada projeto.
-- **Controle do Bambu Studio por tela é frágil.** Se um clique não faz efeito, a skill para, descreve o que está na tela e pergunta, em vez de repetir às cegas. Gemini CLI e Antigravity seguem o roteiro manual.
+- **Controle de tela é opcional e frágil.** Só entra como plano B, se o fatiamento por script falhar. Se um clique não faz efeito, a skill para e pergunta, em vez de repetir às cegas. Ele nunca clica em *Print plate*.
+- **Peça multicor com os dois lados acima de 195 mm é recusada:** falta lugar para a torre de purga.
 - **Licença do Fusion.** Com a licença *Education* (uso não comercial), as peças servem para uso próprio e presentes. Para **vender** o que for impresso, revise a licença do Fusion antes.
 
 ---

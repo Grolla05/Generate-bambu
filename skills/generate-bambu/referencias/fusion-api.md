@@ -204,6 +204,8 @@ corpos de um mesmo `slotN` levam a mesma cor.
 ## Validação (passo 1c) — script readOnly
 
 ```python
+import adsk.core, adsk.fusion, json, re
+
 def run(context):
     app = adsk.core.Application.get()
     des = adsk.fusion.Design.cast(app.activeProduct)
@@ -213,7 +215,7 @@ def run(context):
     for b in root.bRepBodies:
         bb = b.boundingBox
         z0, z1 = bb.minPoint.z, bb.maxPoint.z
-        m = re.match(r'(slot\d+)_', b.name)
+        m = re.match(r'(slot[1-4])_', b.name)
         if m: slots.add(m.group(1))
         out[b.name] = dict(
             slot_ok=bool(m), solido=b.isSolid,
@@ -239,7 +241,7 @@ def run(context):
                      ensure_ascii=False))
 ```
 
-(importe `re` e `json`.) Precisa dar: todo corpo `slot_ok` e `solido`,
+Precisa dar: todo corpo `slot_ok` e `solido`,
 `z_em_camadas` em todos (exceto topo de forma curva, como vaso com borda
 arredondada — diga isso na mensagem), `cabe_na_A1`, `n_slots ≤ 4`,
 `interferencias` vazia e nenhuma `cor` fora do padrão `bubble_#rrggbb`
@@ -291,7 +293,7 @@ def run(context):
     opt = des.exportManager.createC3MFExportOptions(root, bruto)
     opt.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
     des.exportManager.execute(opt)
-    final = 'D:/Bambu Lab/projeto/porta-copo-girassol.3mf'
+    final = '<pasta_saida>/porta-copo-girassol.3mf'   # do diagnostico.py
     os.makedirs(os.path.dirname(final), exist_ok=True)
     rel = agrupar_por_slot(bruto, final)        # colado de helpers/agrupar_3mf.py
     os.remove(bruto)
@@ -314,7 +316,7 @@ bruto do Fusion para o slicer.
 `MeshRefinementHigh` dá desvio de ~0,014 mm (um furo de Ø20 sai com ~190
 lados) — abaixo do que a A1 resolve, então **não há compensação de polígono
 inscrito a fazer**. Não use `isOneFilePerBody` nem `sendToPrintUtility`: o
-arquivo é um só e quem abre o Bambu Studio é o passo 4.
+arquivo é um só e quem abre o Bambu Studio é o passo 5.
 
 ---
 
