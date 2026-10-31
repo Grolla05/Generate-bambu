@@ -51,7 +51,8 @@ Arquivos desta skill (leia sob demanda):
 | `referencias/blender-api.md` | peça no Blender — receitas testadas |
 | `helpers/blender_3mf.py` | peça no Blender — importe no script |
 | `scripts/detectar_modeladores.py` | passo 0 — qual modelador usar |
-| `helpers/agrupar_3mf.py` | passo 3 — cole inteiro no script de exportação |
+| `scripts/agrupar.py` | passo 3 — um objeto por slot, a partir do bruto do Fusion |
+| `helpers/agrupar_3mf.py` | passo 3 sem terminal — o Fusion importa este arquivo |
 | `scripts/diagnostico.py` | passo 0 — o que está pronto nesta máquina |
 | `scripts/fatiar.py` | passo 4 — fatia sem clique e devolve tempo e gramas |
 | `scripts/status.py` | passo 6 e depois — só leitura, e só se o usuário pedir |
@@ -203,11 +204,15 @@ diga as dimensões numa linha — custa segundos.
 Só agora, e só com o OK na mão.
 
 **No Blender:** `b.exportar(...)`, de `referencias/blender-api.md`. **No Fusion:**
-um script que: exporta o componente raiz em 3MF com
-`MeshRefinementHigh` para um arquivo temporário; passa por
-`agrupar_por_slot()` (cole `helpers/agrupar_3mf.py` inteiro no começo do
-script) gravando o final em `<pasta_saida>/<nome-da-peca>.3mf`; apaga o
-temporário; imprime o relatório. Receita pronta em `fusion-api.md`.
+um script exporta o componente raiz em 3MF com `MeshRefinementHigh` para
+`<pasta_saida>/.<nome-da-peca>.bruto.3mf` e imprime o caminho. Depois:
+
+```
+python scripts/agrupar.py "<bruto>" "<pasta_saida>/<nome-da-peca>.3mf" --apagar-bruto
+```
+
+Sem terminal, o script do Fusion importa `helpers/agrupar_3mf.py` pela pasta da
+skill. Colar o helper inteiro é o último recurso. Receitas em `fusion-api.md`.
 
 Do mesmo design que ele aprovou, sem remodelar nada — remodelar abriria
 espaço para o arquivo divergir do que foi aprovado.
@@ -215,8 +220,8 @@ espaço para o arquivo divergir do que foi aprovado.
 **Confira o relatório:** um objeto por slot, `tudo_fechado: true`, cor certa
 em cada slot, `avisos` vazio, e o volume de cada slot batendo com a soma dos
 volumes dos corpos na validação (diferença acima de 1 % é sinal de corpo
-perdido). Se `agrupar_por_slot` recusar (corpo sem `slotN_`, mais de 4 slots,
-unidade errada), corrija no Fusion e exporte de novo.
+perdido). Se o agrupamento recusar (corpo sem `slotN_`, slot fora do limite, duas
+cores num slot, unidade errada), corrija no Fusion e exporte de novo.
 
 Um arquivo. Nada de ZIP, nada de pasta com várias peças soltas, nada de STL.
 

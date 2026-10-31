@@ -320,25 +320,61 @@ linha — o 3MF não depende do documento salvo.
 
 ## Exportar o 3MF (passo 3)
 
+O script só exporta o bruto. Agrupar é outro passo, em terminal, para não colar o
+helper a cada peça:
+
 ```python
-import adsk.core, adsk.fusion, json, os, tempfile
+import adsk.core, adsk.fusion, os
+
 def run(context):
-    ...
-    bruto = os.path.join(tempfile.gettempdir(), 'bubble_bruto.3mf')
+    app = adsk.core.Application.get()
+    des = adsk.fusion.Design.cast(app.activeProduct)
+    root = des.rootComponent
+    pasta = r'<pasta_saida>'                     # do diagnostico.py
+    os.makedirs(pasta, exist_ok=True)
+    bruto = os.path.join(pasta, '.porta-copo-girassol.bruto.3mf')
     opt = des.exportManager.createC3MFExportOptions(root, bruto)
     opt.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
     des.exportManager.execute(opt)
-    final = '<pasta_saida>/porta-copo-girassol.3mf'   # do diagnostico.py
+    print(bruto)
+```
+
+```
+python scripts/agrupar.py "<pasta_saida>/.porta-copo-girassol.bruto.3mf" "<pasta_saida>/porta-copo-girassol.3mf" --apagar-bruto
+```
+
+O bruto fica em `pasta_saida`, e não em temp, porque o terminal de alguns agentes roda
+em sandbox e não lê a pasta temporária do Fusion.
+
+**Sem terminal:** o próprio script agrupa, importando o helper pela pasta da skill. O
+`reload` é obrigatório: o Python do Fusion continua vivo depois que o plugin atualiza.
+
+```python
+import adsk.core, adsk.fusion, importlib, json, os, sys
+
+def run(context):
+    app = adsk.core.Application.get()
+    des = adsk.fusion.Design.cast(app.activeProduct)
+    root = des.rootComponent
+    sys.path.insert(0, r'<pasta da skill>/helpers')
+    import agrupar_3mf
+    importlib.reload(agrupar_3mf)
+    final = r'<pasta_saida>/porta-copo-girassol.3mf'
+    bruto = final + '.bruto.3mf'
     os.makedirs(os.path.dirname(final), exist_ok=True)
-    rel = agrupar_por_slot(bruto, final)        # colado de helpers/agrupar_3mf.py
+    opt = des.exportManager.createC3MFExportOptions(root, bruto)
+    opt.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
+    des.exportManager.execute(opt)
+    rel = agrupar_3mf.agrupar_por_slot(bruto, final)
     os.remove(bruto)
     print(json.dumps(rel, ensure_ascii=False))
 ```
 
-Cole o conteúdo inteiro de `helpers/agrupar_3mf.py` no **começo** do script
-(o Fusion não enxerga os arquivos da skill). Testado: o Fusion exporta um
-`<object>` por corpo, nomeado, em `millimeter`, com a cor; o agrupamento
-devolve um objeto por slot com malhas fechadas e volume igual ao do B-rep
+**Último recurso:** se o `import` falhar, cole `helpers/agrupar_3mf.py` inteiro no
+começo do script e chame `agrupar_por_slot()` direto.
+
+Testado: o Fusion exporta um `<object>` por corpo, nomeado, em `millimeter`, com a cor;
+o agrupamento devolve um objeto por slot com malhas fechadas e volume igual ao do B-rep
 (diferença < 0,1 %).
 
 **Cor no Bambu Studio — testado:** o 3MF bruto do Fusion põe a cor só no
