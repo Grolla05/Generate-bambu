@@ -1,6 +1,6 @@
 ---
 name: generate-bambu
-description: "Modela peça para impressão 3D direto no Autodesk Fusion via MCP, numa sequência fixa: cria o design paramétrico no projeto Bubble Studio 3D, valida e mostra no Fusion, espera o OK, só então exporta o .3mf multicor (um objeto por slot do AMS, camada 0,12 mm), abre o Bambu Studio, carrega o projeto e pergunta antes de imprimir. Use em qualquer pedido de criar, desenhar, modelar ou projetar objeto para impressão 3D, placa, letreiro, chaveiro, lembrancinha, engrenagem, vaso, pote, suporte ou peça multicolor. Modelagem só pelo Fusion — sem SVG, sem Blender. Limite 250×250×250 mm (Bambu Lab A1)."
+description: "Modela e prepara peças para impressão 3D multicor no Autodesk Fusion e no Bambu Studio. Use para criar, desenhar, projetar ou modelar placa, letreiro, chaveiro, lembrancinha, ímã, porta-copo, vaso, pote, caixa, suporte, engrenagem ou peça multicolor. Use for 3D print, 3D model, keychain, nameplate, sign, coaster, vase, box, bracket, gear, multicolor, 3MF, Bambu Lab, AMS, Fusion. Não use para SVG ou desenho 2D que não vá para impressão 3D."
 license: MIT
 compatibility: "Windows; Autodesk Fusion com servidor MCP local ativo; Bambu Studio em inglês (testado na 02.08); Bambu Lab A1 com AMS Lite. Controle de tela é opcional."
 metadata:
@@ -22,12 +22,12 @@ não troque a ordem, e não substitua o que cada passo entrega.
 6. perguntar antes de imprimir
 ```
 
-**Cinco regras que valem o fluxo inteiro:**
+**Seis regras que valem o fluxo inteiro:**
 
 - **A modelagem é no Fusion, e só.** Toda geometria nasce por script no
-  Fusion via `fusion_mcp_execute`. Nunca gere SVG, malha em Python, OpenSCAD
-  ou CadQuery como substituto. Se o Fusion não responder, pare e peça para o
-  usuário abri-lo (passo 0).
+  Fusion via `fusion_mcp_execute`. Nunca gere SVG, malha em Python, OpenSCAD,
+  CadQuery ou Blender como substituto. Se o Fusion não responder, pare e peça
+  para o usuário abri-lo (passo 0).
 - **A saída é `.3mf`, e só.** Nunca ZIP, nunca STL, nunca OBJ, nunca uma pasta
   de arquivos. Um objeto por slot do AMS, dentro de um `.3mf` só.
 - **A prévia é o design aberto no Fusion.** O usuário gira a peça lá, na tela
@@ -38,6 +38,8 @@ não troque a ordem, e não substitua o que cada passo entrega.
   conseguiu.
 - **O `.3mf` só nasce depois do OK.** O passo 1 modela e salva o design, mas
   não exporta arquivo de impressão nenhum.
+- **Imprimir só com "sim" explícito.** Nem a aprovação da forma nem um pedido
+  feito antes valem pelo passo 6: a pergunta vem depois do slice.
 
 Arquivos desta skill (leia sob demanda):
 
@@ -79,7 +81,10 @@ usuário topar, **modele e mostre**.
 **3. Quantas cores?** O AMS Lite tem 4 slots. Uma cor = um `slotN` = um
 objeto no 3MF = um filamento. Acima de 2 cores, avise do custo de purga.
 
-**4. O Fusion está respondendo?** `fusion_mcp_read` com
+**4. Cabe na mesa?** O limite é 250×250×250 mm (Bambu Lab A1). Peça maior:
+diga na primeira resposta e proponha dividir ou reduzir.
+
+**5. O Fusion está respondendo?** `fusion_mcp_read` com
 `{queryType: "document", operation: "open"}`. Se der erro ou não responder,
 diga que o Fusion não está acessível e peça para o usuário abri-lo (ou abra
 com `computer_open_application`, se tiver acesso). Não siga sem ele.
