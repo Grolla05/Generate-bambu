@@ -56,6 +56,7 @@ Arquivos desta skill (leia sob demanda):
 | `scripts/diagnostico.py` | passo 0 — o que está pronto nesta máquina |
 | `scripts/fatiar.py` | passo 4 — fatia sem clique e devolve tempo e gramas |
 | `scripts/status.py` | passo 6 e depois — só leitura, e só se o usuário pedir |
+| `scripts/registro.py` | depois do passo 6 — linha pronta para levar a uma nota |
 | `scripts/config.py` | pasta de saída, Bambu Studio, máquina, projeto do Fusion |
 | `referencias/bambu-cliques.md` | plano B, se o passo 4 falhar |
 | `referencias/fdm-a1.md` | ao decidir espessura, folga, orientação, balanço |
@@ -242,14 +243,14 @@ Um arquivo. Nada de ZIP, nada de pasta com várias peças soltas, nada de STL.
 ## Passo 4 — Fatiar por script
 
 ```
-python scripts/fatiar.py "<pasta_saida>/<nome-da-peca>.3mf" --abrir
+python scripts/fatiar.py "<pasta_saida>/<nome-da-peca>.3mf" --abrir --modelador fusion --documento "<nome no modelador>"
 ```
 
 Sem clique e sem diálogo. O script monta um projeto nativo do Bambu Studio com
 os perfis da configuração (0,12 mm, e primeira camada de 0,24 mm para as alturas
-seguirem múltiplos da camada), fatia e grava em
-`<pasta_saida>/_fatiados/<nome-da-peca>/<nome-da-peca>.gcode.3mf`. Ele não fala
-com a impressora.
+seguirem múltiplos da camada), fatia, grava em
+`<pasta_saida>/_fatiados/<nome-da-peca>/<nome-da-peca>.gcode.3mf` e anota a peça no
+registro local. Ele não fala com a impressora.
 
 O JSON traz `tempo_s`, `peso_g`, `camadas`, `camada_mm`, `dimensoes_mm`,
 `filamentos` e `avisos`. Compare `dimensoes_mm` com o que o modelador mostrou. Se o
@@ -301,8 +302,16 @@ vira plástico e tempo de máquina a partir desse clique.
 
 ## Depois: registrar
 
-Se o perfil disser onde anotar a peça, anote. Tempo e gramas só existem depois de
-fatiar: sem eles, não registre nem invente, e diga que o registro ficou pendente.
+O `fatiar.py` já anotou a peça em `~/.generate-bambu/registro.jsonl`, e o relatório
+traz `registro.id`. Refatiar mantém o mesmo id. Quem fatiou à mão pelo plano B anota com
+`python scripts/registro.py adicionar <fatiado>`.
+
+Para levar a peça a uma nota, rode `python scripts/registro.py linha`, que devolve a
+linha Markdown, `nota` e `secao`. Com `nota` preenchida e acesso a notas, insira só essa
+linha na seção, sem reescrever a nota. Sem `nota`, ou sem acesso, entregue a linha pronta
+para o usuário colar. O perfil pode dizer mais sobre esse destino.
+
+Tempo e gramas só vêm do fatiado. Nunca digite esses números.
 
 **Licença do modelador.** Se a peça for para **venda** e o Fusion estiver numa licença
 não comercial, lembre em uma linha que a licença precisa ser revista antes. O Blender

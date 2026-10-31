@@ -1,9 +1,10 @@
 """Fatia um .3mf da skill pelo CLI do Bambu Studio, sem interface e sem clique.
 
-    python fatiar.py <peca>.3mf [--abrir]
+    python fatiar.py <peca>.3mf [--abrir] [--modelador fusion] [--documento "Nome"]
 
 Grava em <pasta da peça>/_fatiados/<peca>/<peca>.gcode.3mf e devolve JSON com tempo,
-gramas, camadas e dimensões. --abrir mostra o resultado no Bambu Studio.
+gramas, camadas e dimensões. Anota a peça no registro local. --abrir mostra o resultado
+no Bambu Studio.
 
 ESTE SCRIPT NÃO IMPRIME. Não fala com a impressora: quem manda imprimir é o usuário, no
 botão Print plate.
@@ -29,6 +30,7 @@ import config as cfg  # noqa: E402
 import diagnostico  # noqa: E402
 import perfis  # noqa: E402
 import projeto_bambu  # noqa: E402
+import registro  # noqa: E402
 from agrupar_3mf import ler_slots_fusion  # noqa: E402
 
 ARQUIVO_FATIADO = "fatiado.3mf"
@@ -196,6 +198,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("entrada", help=".3mf gerado no passo 3")
     parser.add_argument("--abrir", action="store_true", help="mostra o fatiado no Bambu Studio")
+    parser.add_argument("--modelador", help="fusion ou blender, para o registro")
+    parser.add_argument("--documento", help="nome do documento no modelador, para o registro")
     args = parser.parse_args(argv)
 
     config = cfg.carregar()
@@ -211,6 +215,14 @@ def main(argv=None):
     except (OSError, ValueError, KeyError) as erro:
         cfg.imprimir_json({"erro": str(erro)})
         return 2
+    # Depois do fatiamento conferido: falha aqui não pode custar o arquivo pronto.
+    try:
+        relatorio["registro"] = registro.anotar(
+            relatorio, Path(args.entrada).stem, args.entrada, config,
+            modelador=args.modelador, documento=args.documento,
+        )
+    except OSError as erro:
+        relatorio["avisos"].append(f"Registro local não gravado: {erro}")
     if args.abrir:
         abrir_no_bambu(bambu["exe"], relatorio["arquivo"])
     cfg.imprimir_json(relatorio)

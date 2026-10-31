@@ -78,7 +78,9 @@ foco). Duas ou três tentativas, então pare, descreva o que está na tela e
 pergunte. O usuário está na frente do computador.
 
 Colete da tela o **tempo estimado** e as **gramas por filamento** e volte ao
-passo 6. **Nunca clique em *Print plate* ou *Send*.**
+passo 6. **Nunca clique em *Print plate* ou *Send*.** Se o usuário salvar o fatiado
+como `.gcode.3mf`, `python scripts/registro.py adicionar <arquivo>` anota a peça com os
+números do próprio arquivo.
 
 ---
 
