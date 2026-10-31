@@ -11,8 +11,8 @@ from pathlib import Path
 import yaml
 
 RAIZ = Path(__file__).resolve().parent.parent
-PLUGIN = RAIZ / "plugins" / "generate-bambu"
-SKILL = PLUGIN / "skills" / "generate-bambu"
+PLUGIN = RAIZ
+SKILL = RAIZ / "skills" / "generate-bambu"
 
 sys.path.insert(0, str(SKILL / "helpers"))
 

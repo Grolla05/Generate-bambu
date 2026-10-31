@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "generate-bambu",
-      "source": "./plugins/generate-bambu",
+      "source": "./",
       "description": "Modela peças no Autodesk Fusion via MCP, exporta .3mf multicor e prepara a impressão no Bambu Studio, com aprovação humana antes de imprimir."
     }
   ]

@@ -53,7 +53,7 @@ jobs:
 
       # Compila todo .py do repositório: pega erro de sintaxe antes dos testes.
       - name: Compilar todos os arquivos Python
-        run: python -m compileall -q plugins tests
+        run: python -m compileall -q skills tests
 
       # agrupar_3mf.py, trechos Python da documentação e manifestos do plugin.
       - name: Pytest

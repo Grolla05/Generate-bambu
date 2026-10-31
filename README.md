@@ -179,7 +179,7 @@ Se preferir não usar marketplace, copie a pasta da skill para o diretório de s
 
 ```powershell
 # Windows (PowerShell)
-Copy-Item -Recurse .\plugins\generate-bambu\skills\generate-bambu "$env:USERPROFILE\.claude\skills\generate-bambu"
+Copy-Item -Recurse .\skills\generate-bambu "$env:USERPROFILE\.claude\skills\generate-bambu"
 ```
 
 > [!NOTE]
@@ -256,20 +256,17 @@ Cria uma lembrancinha de 70 x 50 mm com a data "12/10" e uma moldura em dourado.
 ```text
 Generate-bambu/
 ├── .claude-plugin/
-│   └── marketplace.json            # catálogo: permite instalar pelo GitHub
-├── plugins/
+│   ├── marketplace.json            # catálogo: permite instalar pelo GitHub
+│   └── plugin.json                 # manifesto do plugin
+├── skills/
 │   └── generate-bambu/
-│       ├── .claude-plugin/
-│       │   └── plugin.json         # manifesto do plugin
-│       └── skills/
-│           └── generate-bambu/
-│               ├── SKILL.md        # o fluxo de seis passos
-│               ├── referencias/
-│               │   ├── fusion-api.md   # receitas testadas de script, validação e exportação
-│               │   ├── fdm-a1.md       # espessuras, folgas, orientação e balanços da A1
-│               │   └── limites.md      # triagem do que cabe (ou não) no método
-│               └── helpers/
-│                   └── agrupar_3mf.py  # agrupa o 3MF em um objeto por slot
+│       ├── SKILL.md                # o fluxo de seis passos
+│       ├── referencias/
+│       │   ├── fusion-api.md       # receitas testadas de script, validação e exportação
+│       │   ├── fdm-a1.md           # espessuras, folgas, orientação e balanços da A1
+│       │   └── limites.md          # triagem do que cabe (ou não) no método
+│       └── helpers/
+│           └── agrupar_3mf.py      # agrupa o 3MF em um objeto por slot
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                  # CI: lint (ruff) e testes (pytest, Python 3.10 a 3.13)
