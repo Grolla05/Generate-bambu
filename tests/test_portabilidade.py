@@ -5,6 +5,7 @@ import re
 import subprocess
 
 import pytest
+import yaml
 from conftest import RAIZ, SKILL, ler_frontmatter
 
 NOME = "generate-bambu"
@@ -143,6 +144,22 @@ def test_url_do_fusion_usa_a_chave_certa_de_cada_formato():
     # no Gemini, `url` significa SSE
     assert gemini == {"httpUrl": URL_FUSION}
     assert _json(".codex-plugin/plugin.json")["mcpServers"] == "./mcp.json"
+
+
+def test_openai_yaml_declara_o_fusion():
+    config = yaml.safe_load((SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8"))
+
+    assert config["policy"]["allow_implicit_invocation"] is True
+    assert config["interface"]["display_name"]
+    assert config["dependencies"]["tools"] == [
+        {
+            "type": "mcp",
+            "value": "fusion",
+            "description": "Servidor MCP local do Autodesk Fusion",
+            "transport": "streamable_http",
+            "url": URL_FUSION,
+        }
+    ]
 
 
 def test_skill_nao_cita_ferramenta_de_um_agente_so():
