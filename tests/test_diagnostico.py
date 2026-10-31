@@ -117,8 +117,12 @@ def test_sem_bambu_studio(monkeypatch):
 def test_diagnostico_mostra_maquina_e_perfil(tmp_path, monkeypatch):
     monkeypatch.setenv("GENERATE_BAMBU_CONFIG", str(tmp_path / "config.json"))
     config = _config()
-    sem_fusion = lambda _: {"estado": "porta_fechada", "detalhe": "x"}
-    sem_bambu = lambda _: {"exe": None, "versao": None, "origem": None}
+
+    def sem_fusion(_):
+        return {"estado": "porta_fechada", "detalhe": "x"}
+
+    def sem_bambu(_):
+        return {"exe": None, "versao": None, "origem": None}
 
     r = dg.diagnosticar(config, testar=sem_fusion, achar=sem_bambu)
 
