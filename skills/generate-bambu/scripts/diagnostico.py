@@ -139,11 +139,15 @@ def diagnosticar(config, testar=testar_mcp, achar=achar_bambu_studio):
     fusion["instrucao"] = INSTRUCOES[fusion["estado"]]
     bambu = achar(config)
     pasta = config["pasta_saida"]
+    modelo = config["maquina"]["modelo"]
     return {
         "fusion": fusion,
         "bambu_studio": bambu,
         "python": ".".join(map(str, sys.version_info[:3])),
         "pasta_saida": {"caminho": pasta, "existe": bool(pasta) and Path(pasta).is_dir()},
+        "perfil": cfg.perfil(),
+        "maquina": config["maquina"],
+        "impressao_testada": modelo == cfg.MAQUINA_TESTADA,
         "fatiar_por_cli": bool(bambu["exe"]),
     }
 

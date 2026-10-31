@@ -1,14 +1,13 @@
 """Roda DENTRO do Blender: prepara a cena, valida e exporta o .3mf da peça.
 
 Mesmo contrato do Fusion: cada cor é um objeto `slotN_descricao`, com material
-`bubble_#rrggbb`. A cor vem do nome do material, não do valor do nó, para não
+`cor_#rrggbb`. A cor vem do nome do material, não do valor do nó, para não
 passar pela conversão sRGB/linear. A malha é a avaliada, com modificadores aplicados.
 
 Testado no Blender 5.2.3 LTS, com `--background` e sem interface.
 """
 
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -17,11 +16,9 @@ import bpy
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from agrupar_3mf import montar_3mf  # noqa: E402
+from agrupar_3mf import MAX_SLOTS, PREFIXO_COR, RE_COR, RE_SLOT, montar_3mf  # noqa: E402
 
 LIMITE_MM = 250.0
-_RE_SLOT = re.compile(r"^slot([1-4])_")
-_RE_COR = re.compile(r"^bubble_(#[0-9a-f]{6})$")
 _VOLUME_MINIMO_MM3 = 1e-3
 
 
@@ -35,7 +32,7 @@ def preparar_cena():
 
 
 def colorir(objeto, hexcor):
-    nome = "bubble_" + hexcor.lower()
+    nome = PREFIXO_COR + hexcor.lower()
     material = bpy.data.materials.get(nome) or bpy.data.materials.new(nome)
     r, g, b = (int(hexcor[i:i + 2], 16) / 255 for i in (1, 3, 5))
     material.diffuse_color = (r, g, b, 1)
@@ -78,6 +75,16 @@ def _objetos():
     return [o for o in bpy.context.scene.objects if o.type == "MESH"]
 
 
+def _slot(nome, max_slots):
+    """Número do slot, ou None se o nome fugir do contrato."""
+    m = RE_SLOT.match(nome)
+    return int(m.group(1)) if m and 1 <= int(m.group(1)) <= max_slots else None
+
+
+def _cor(objeto):
+    return RE_COR.match(objeto.active_material.name) if objeto.active_material else None
+
+
 def _volume_comum(a, b):
     """Volume da interseção: faces só encostadas dão zero, sobreposição dá volume."""
     grafo = bpy.context.evaluated_depsgraph_get()
@@ -97,35 +104,33 @@ def _volume_comum(a, b):
         bpy.data.meshes.remove(malha)
 
 
-def validar():
+def validar(max_slots=MAX_SLOTS, limite_mm=LIMITE_MM):
     """Mesmas perguntas do passo 1c. Devolve dict com `ok` e a lista `erros`."""
     corpos, erros, slots = {}, [], {}
     objetos = _objetos()
     if not objetos:
         erros.append("cena sem malha")
     for o in objetos:
-        m = _RE_SLOT.match(o.name)
-        cor = _RE_COR.match(o.active_material.name) if o.active_material else None
+        slot, cor = _slot(o.name, max_slots), _cor(o)
         fechada, volume = _medir(o)
         corpos[o.name] = {"fechada": fechada, "volume_mm3": round(volume, 2)}
-        if not m:
-            erros.append(f"{o.name}: nome fora do contrato slotN_descricao, N de 1 a 4")
+        if slot is None:
+            erros.append(f"{o.name}: nome fora do contrato slotN_descricao, N de 1 a {max_slots}")
         if not cor:
-            erros.append(f"{o.name}: sem material bubble_#rrggbb")
+            erros.append(f"{o.name}: sem material {PREFIXO_COR}#rrggbb")
         if not fechada:
             erros.append(f"{o.name}: malha aberta ou não-manifold")
         if volume < _VOLUME_MINIMO_MM3:
             erros.append(f"{o.name}: volume zero")
-        if m and cor:
-            if slots.setdefault(m.group(1), cor.group(1)) != cor.group(1):
-                erros.append(f"slot{m.group(1)}: corpos com cores diferentes")
+        if slot is not None and cor and slots.setdefault(slot, cor.group(1)) != cor.group(1):
+            erros.append(f"slot{slot}: corpos com cores diferentes")
 
     pontos = [v for o in objetos for v in _malha(o)[0]]
     total = [0.0, 0.0, 0.0]
     if pontos:
         total = [round(max(p[i] for p in pontos) - min(p[i] for p in pontos), 2) for i in range(3)]
-    if any(v > LIMITE_MM for v in total):
-        erros.append(f"peça de {total} mm não cabe em {LIMITE_MM:.0f} mm")
+    if any(v > limite_mm for v in total):
+        erros.append(f"peça de {total} mm não cabe em {limite_mm:.0f} mm")
 
     interferencias = []
     for i, a in enumerate(objetos):
@@ -140,15 +145,14 @@ def validar():
             "n_slots": len(slots), "interferencias": interferencias}
 
 
-def slots_da_cena():
+def slots_da_cena(max_slots=MAX_SLOTS):
     grupos = {}
     for o in _objetos():
-        m = _RE_SLOT.match(o.name)
-        cor = _RE_COR.match(o.active_material.name) if o.active_material else None
-        if not m or not cor:
+        numero, cor = _slot(o.name, max_slots), _cor(o)
+        if numero is None or not cor:
             raise ValueError(f"{o.name}: fora do contrato; rode validar()")
-        slot = grupos.setdefault(int(m.group(1)), {
-            "slot": f"slot{m.group(1)}", "cor": cor.group(1).upper() + "FF",
+        slot = grupos.setdefault(numero, {
+            "slot": f"slot{numero}", "cor": cor.group(1).upper() + "FF",
             "verts": [], "tris": [], "corpos": [],
         })
         verts, tris = _malha(o)
@@ -163,12 +167,12 @@ def salvar(caminho):
     bpy.ops.wm.save_as_mainfile(filepath=str(caminho))
 
 
-def exportar(caminho):
+def exportar(caminho, max_slots=MAX_SLOTS, limite_mm=LIMITE_MM):
     """Grava o .3mf da peça, recusando cena que não passa na validação."""
-    resultado = validar()
+    resultado = validar(max_slots, limite_mm)
     if not resultado["ok"]:
         raise ValueError("; ".join(resultado["erros"]))
-    return montar_3mf(slots_da_cena(), str(caminho))
+    return montar_3mf(slots_da_cena(max_slots), str(caminho), max_slots=max_slots)
 
 
 def imprimir_json(dados):

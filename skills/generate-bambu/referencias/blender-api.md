@@ -71,7 +71,7 @@ baixo dá o visual low-poly.
 O mesmo do Fusion, porque o resto do fluxo depende dele:
 
 - **Cada cor é um objeto**, com nome `slotN_descricao`, N de 1 a 4.
-- **Material `bubble_#rrggbb`**, com `b.colorir(objeto, "#e8b647")`. A cor do arquivo
+- **Material `cor_#rrggbb`**, com `b.colorir(objeto, "#e8b647")`. A cor do arquivo
   vem do nome do material.
 - Objetos do mesmo `slotN_` podem se sobrepor: viram cascas da mesma cor.
 - **Cores diferentes não se sobrepõem.** Encostar pode; dividir volume é defeito.
@@ -107,8 +107,9 @@ b.imprimir_json(resultado)
 ```
 
 Precisa dar `ok: true`. `validar()` confere contrato, material, malha fechada, volume,
-250 mm, cor única por slot e sobreposição entre cores, sempre na malha com
-modificadores aplicados. A lista `erros` diz o que corrigir. A linha sai no console
+limite da máquina, cor única por slot e sobreposição entre cores, sempre na malha com
+modificadores aplicados. Fora da A1, passe os valores de `maquina`:
+`b.validar(max_slots=4, limite_mm=175)`, e o mesmo em `b.exportar()`. A lista `erros` diz o que corrigir. A linha sai no console
 com o prefixo `RESULTADO`.
 
 Altura em múltiplo de camada não é cobrada aqui: em forma curva não existe. Avise na

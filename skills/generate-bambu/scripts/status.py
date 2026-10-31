@@ -8,9 +8,9 @@ Conecta em 8883 com o usuário `bblp`, assina `device/<serial>/report` e pede o 
 completo (`pushall`) uma vez. É o único comando publicado: este script não sabe iniciar,
 pausar nem cancelar impressão. Só rode com pedido do usuário.
 
-Exige paho-mqtt (`pip install -r requirements-lan.txt`). O resto é stdlib. Porte do
-acompanhamento do backend Bubble Studio, conferido na A1 real com AMS Lite: a A1 só
-manda deltas em `print.*`, e o estado completo vem na resposta ao `pushall`.
+Exige paho-mqtt (`pip install -r requirements-lan.txt`). O resto é stdlib. Protocolo
+conferido numa A1 real com AMS Lite: a A1 só manda deltas em `print.*`, e o estado
+completo vem na resposta ao `pushall`.
 """
 
 import argparse

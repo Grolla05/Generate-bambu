@@ -1,5 +1,8 @@
 # Regras FDM para a Bambu Lab A1
 
+Escrito para a A1. Na A1 mini vale o mesmo, com mesa menor. Na P1S a mesa não se move
+em Y, então as regras de peça alta são mais folgadas.
+
 Consulta. Não precisa ler inteiro — pule para a seção que a peça exige.
 
 Bico 0,4 mm · camada 0,12 mm (padrão da skill) · mesa 256×256×256 mm (use 250 como limite) ·

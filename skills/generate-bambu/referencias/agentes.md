@@ -7,11 +7,10 @@ Os `fusion_mcp_*` são iguais em todo agente, porque vêm do próprio Fusion, e 
 mesmo vale para as ferramentas do Blender. O agente pode exibi-las com prefixo do
 servidor, mas o final do nome é o mesmo.
 
-> **Antes de usar:** o projeto "Bubble Studio 3D" e as notas de catálogo do
-> `SKILL.md` são padrões do autor. Quem instalar precisa trocar pelos seus. A
-> pasta de saída e o Bambu Studio ficam em `~/.generate-bambu/config.json`
-> (modelo em `config.example.json`), fora da skill, porque atualizar o plugin
-> troca a pasta dela.
+> **Configuração:** pasta de saída, Bambu Studio, máquina e projeto do Fusion ficam
+> em `~/.generate-bambu/config.json` (modelo em `config.example.json`), e o contexto
+> de quem usa fica em `~/.generate-bambu/perfil.md` (modelo em `perfil.example.md`).
+> Os dois moram fora da skill porque atualizar o plugin troca a pasta dela.
 
 ---
 

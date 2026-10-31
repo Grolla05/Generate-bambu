@@ -97,7 +97,7 @@ preenchendo o rebaixo — dois corpos encostados, sem sobrepor.
 
 ```python
 sk = root.sketches.add(plano)
-ti = sk.sketchTexts.createInput2('BUBBLE', 0.6)          # altura 6 mm
+ti = sk.sketchTexts.createInput2('AMIGOS', 0.6)          # altura 6 mm
 ti.setAsMultiLine(P(-1.5,-0.5,0), P(1.5,0.5,0),      # centrado em x = 0
                   adsk.core.HorizontalAlignments.CenterHorizontalAlignment,
                   adsk.core.VerticalAlignments.MiddleVerticalAlignment, 0)
@@ -110,12 +110,12 @@ for i in range(e.bodies.count):
 ```
 
 **Pegadinha testada:** a caixa do `setAsMultiLine` **não limita a largura** —
-o texto transborda dela. "BUBBLE" a 6 mm em Arial mede ~32 mm (≈ 5,4 mm por
+o texto transborda dela. Seis letras a 6 mm em Arial medem ~32 mm (≈ 5,4 mm por
 letra). Depois de extrudar, leia a bounding box das letras e confirme que não
 invadem furo nem outra cor; a validação 1c pega a sobreposição, mas é melhor
 dimensionar antes.
 
-**Outra pegadinha testada:** texto extrudado vira **um corpo por letra** (BUBBLE →
+**Outra pegadinha testada:** texto extrudado vira **um corpo por letra** (AMIGOS →
 6 corpos, fora da ordem de leitura), e `Combine/Join` de corpos que não se tocam não une — o Fusion
 devolve os corpos separados de novo. Não brigue com isso: nomeie todos com o
 mesmo `slotN_` e o `agrupar_3mf.py` junta no passo 3.
@@ -183,7 +183,7 @@ lib = app.materialLibraries.itemByName('Fusion Appearance Library')
 modelo = lib.appearances.itemByName('Paint - Enamel Glossy (Yellow)')
 
 def colorir(body, hexcor):
-    nome = 'bubble_' + hexcor.lower()                    # ex.: bubble_#e8b647
+    nome = 'cor_' + hexcor.lower()                       # ex.: cor_#e8b647
     a = des.appearances.itemByName(nome)
     if not a:
         a = des.appearances.addByCopy(modelo, nome)
@@ -203,52 +203,87 @@ corpos de um mesmo `slotN` levam a mesma cor.
 
 ## Validação (passo 1c) — script readOnly
 
+Antes de rodar, ponha em `LIMITE_MM` e `SLOTS` os valores de `maquina` em
+`python scripts/config.py mostrar`. `CURVA = True` só para topo de forma curva, como
+vaso com borda arredondada: altura fora de camada vira aviso, e isso vai na mensagem.
+
 ```python
 import adsk.core, adsk.fusion, json, re
+
+LIMITE_MM = 250
+SLOTS = 4
+CURVA = False
+RE_SLOT = r'^slot(0|[1-9]\d*)_.+$'
+RE_COR = r'^(?:cor|bubble)_(#[0-9a-f]{6})$'
 
 def run(context):
     app = adsk.core.Application.get()
     des = adsk.fusion.Design.cast(app.activeProduct)
     root = des.rootComponent
-    cam = des.userParameters.itemByName('camada').value     # cm
-    out, slots = {}, set()
-    for b in root.bRepBodies:
+    erros, avisos, out, cores = [], [], {}, {}
+    parametro = des.userParameters.itemByName('camada')
+    cam = parametro.value if parametro else None                # cm
+    if cam is None:
+        erros.append('parâmetro camada ausente')
+    for comp in des.allComponents:
+        if comp.id != root.id and comp.bRepBodies.count:
+            erros.append(f'{comp.name}: corpo em subcomponente; mova para a raiz')
+    corpos = list(root.bRepBodies)
+    if not corpos:
+        erros.append('design sem corpos')
+    for b in corpos:
         bb = b.boundingBox
         z0, z1 = bb.minPoint.z, bb.maxPoint.z
-        m = re.match(r'(slot[1-4])_', b.name)
-        if m: slots.add(m.group(1))
+        m = re.match(RE_SLOT, b.name)
+        slot = int(m.group(1)) if m else 0
+        cor = b.appearance.name if b.appearance else None
+        c = re.match(RE_COR, cor or '')
+        em_camadas = cam is not None and all(abs(v/cam - round(v/cam)) < 1e-3 for v in (z0, z1))
+        if not 1 <= slot <= SLOTS:
+            erros.append(f'{b.name}: nome fora do contrato slotN_descricao, N de 1 a {SLOTS}')
+        if not b.isSolid:
+            erros.append(f'{b.name}: corpo não sólido')
+        if not c:
+            erros.append(f'{b.name}: cor {cor} fora do padrão cor_#rrggbb')
+        elif slot:
+            cores.setdefault(slot, set()).add(c.group(1))
+        if cam is not None and not em_camadas:
+            (avisos if CURVA else erros).append(f'{b.name}: altura fora de múltiplo da camada')
         out[b.name] = dict(
-            slot_ok=bool(m), solido=b.isSolid,
             vol_mm3=round(b.volume * 1000, 2),
             x=round((bb.maxPoint.x-bb.minPoint.x)*10, 2),
             y=round((bb.maxPoint.y-bb.minPoint.y)*10, 2),
             z=[round(z0*10, 3), round(z1*10, 3)],
-            z_em_camadas=all(abs(v/cam - round(v/cam)) < 1e-3 for v in (z0, z1)),
-            cor=b.appearance.name if b.appearance else None)
+            z_em_camadas=em_camadas, cor=cor)
+    for slot, usadas in cores.items():
+        if len(usadas) > 1:
+            erros.append(f'slot{slot}: corpos com cores diferentes {sorted(usadas)}')
     # união das caixas dos CORPOS (root.boundingBox inclui sketches e planos)
-    bbs = [b.boundingBox for b in root.bRepBodies]
-    mn = [min(getattr(c.minPoint, k) for c in bbs) for k in 'xyz']
-    mx = [max(getattr(c.maxPoint, k) for c in bbs) for k in 'xyz']
-    tudo = [(a - b) * 10 for a, b in zip(mx, mn)]
-    corpos = adsk.core.ObjectCollection.create()
-    for b in root.bRepBodies: corpos.add(b)
-    interf = [(r.entityOne.name, r.entityTwo.name,
-               round(r.interferenceBody.volume*1000, 3))
-              for r in des.analyzeInterference(des.createInterferenceInput(corpos))]
-    print(json.dumps(dict(corpos=out, total_mm=[round(v, 2) for v in tudo],
-                          cabe_na_A1=all(v <= 250 for v in tudo),
-                          n_slots=len(slots), interferencias=interf),
+    tudo, interf = [0, 0, 0], []
+    if corpos:
+        bbs = [b.boundingBox for b in corpos]
+        mn = [min(getattr(c.minPoint, k) for c in bbs) for k in 'xyz']
+        mx = [max(getattr(c.maxPoint, k) for c in bbs) for k in 'xyz']
+        tudo = [round((a - b) * 10, 2) for a, b in zip(mx, mn)]
+    if any(v > LIMITE_MM for v in tudo):
+        erros.append(f'peça de {tudo} mm não cabe em {LIMITE_MM} mm')
+    if len(corpos) > 1:
+        colecao = adsk.core.ObjectCollection.create()
+        for b in corpos: colecao.add(b)
+        interf = [(r.entityOne.name, r.entityTwo.name,
+                   round(r.interferenceBody.volume*1000, 3))
+                  for r in des.analyzeInterference(des.createInterferenceInput(colecao))]
+    if interf:
+        erros.append(f'volumes sobrepostos: {interf}')
+    print(json.dumps(dict(ok=not erros, erros=erros, avisos=avisos, corpos=out,
+                          total_mm=tudo, n_slots=len(cores), interferencias=interf),
                      ensure_ascii=False))
 ```
 
-Precisa dar: todo corpo `slot_ok` e `solido`,
-`z_em_camadas` em todos (exceto topo de forma curva, como vaso com borda
-arredondada — diga isso na mensagem), `cabe_na_A1`, `n_slots ≤ 4`,
-`interferencias` vazia e nenhuma `cor` fora do padrão `bubble_#rrggbb`
-(corpo sem cor atribuída aparece como `Steel - Satin`, o padrão do Fusion).
-Faces encostadas (camada de cor sobre a base) **não** contam como
-interferência; volume sobreposto conta, e é defeito — cor misturada na mesma
-região.
+Precisa dar `ok: true`. A lista `erros` diz o que corrigir, e `avisos` vai na mensagem.
+Corpo sem cor atribuída aparece como `Steel - Satin`, o padrão do Fusion, e cai em
+`erros`. Faces encostadas (camada de cor sobre a base) **não** contam como
+interferência; volume sobreposto conta, e é defeito: cor misturada na mesma região.
 
 ---
 
@@ -261,21 +296,23 @@ do script de modelagem.
 
 ---
 
-## Salvar no projeto "Bubble Studio 3D"
+## Salvar no projeto do Fusion
+
+O nome vem de `fusion.projeto`, em `python scripts/config.py mostrar`.
 
 ```python
+PROJETO = '<fusion.projeto>'
 dp = app.data.dataProjects
 proj = next((dp.item(i) for i in range(dp.count)
-             if dp.item(i).name == 'Bubble Studio 3D'), None)
+             if dp.item(i).name == PROJETO), None)
 if proj is None:
-    proj = dp.add('Bubble Studio 3D')
+    proj = dp.add(PROJETO)
 app.activeDocument.saveAs('Porta-copo Girassol', proj.rootFolder,
                           'generate-bambu', '')
 ```
 
-Na primeira peça o projeto ainda não existe (o hub tinha só Admin Project,
-Assets, Default Project) — o código cria. O salvamento sobe para a nuvem em
-segundo plano. Nas voltas de ajuste: `app.activeDocument.save('ajuste: …')`
+Na primeira peça o projeto ainda não existe, e o código cria. O salvamento sobe
+para a nuvem em segundo plano. Nas voltas de ajuste: `app.activeDocument.save('ajuste: …')`
 gera versão nova do mesmo documento.
 
 Se `saveAs` falhar (sem rede, hub offline), siga sem salvar e diga isso numa
@@ -285,25 +322,61 @@ linha — o 3MF não depende do documento salvo.
 
 ## Exportar o 3MF (passo 3)
 
+O script só exporta o bruto. Agrupar é outro passo, em terminal, para não colar o
+helper a cada peça:
+
 ```python
-import os, tempfile
+import adsk.core, adsk.fusion, os
+
 def run(context):
-    ...
-    bruto = os.path.join(tempfile.gettempdir(), 'bubble_bruto.3mf')
+    app = adsk.core.Application.get()
+    des = adsk.fusion.Design.cast(app.activeProduct)
+    root = des.rootComponent
+    pasta = r'<pasta_saida>'                     # do diagnostico.py
+    os.makedirs(pasta, exist_ok=True)
+    bruto = os.path.join(pasta, '.porta-copo-girassol.bruto.3mf')
     opt = des.exportManager.createC3MFExportOptions(root, bruto)
     opt.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
     des.exportManager.execute(opt)
-    final = '<pasta_saida>/porta-copo-girassol.3mf'   # do diagnostico.py
+    print(bruto)
+```
+
+```
+python scripts/agrupar.py "<pasta_saida>/.porta-copo-girassol.bruto.3mf" "<pasta_saida>/porta-copo-girassol.3mf" --apagar-bruto
+```
+
+O bruto fica em `pasta_saida`, e não em temp, porque o terminal de alguns agentes roda
+em sandbox e não lê a pasta temporária do Fusion.
+
+**Sem terminal:** o próprio script agrupa, importando o helper pela pasta da skill. O
+`reload` é obrigatório: o Python do Fusion continua vivo depois que o plugin atualiza.
+
+```python
+import adsk.core, adsk.fusion, importlib, json, os, sys
+
+def run(context):
+    app = adsk.core.Application.get()
+    des = adsk.fusion.Design.cast(app.activeProduct)
+    root = des.rootComponent
+    sys.path.insert(0, r'<pasta da skill>/helpers')
+    import agrupar_3mf
+    importlib.reload(agrupar_3mf)
+    final = r'<pasta_saida>/porta-copo-girassol.3mf'
+    bruto = final + '.bruto.3mf'
     os.makedirs(os.path.dirname(final), exist_ok=True)
-    rel = agrupar_por_slot(bruto, final)        # colado de helpers/agrupar_3mf.py
+    opt = des.exportManager.createC3MFExportOptions(root, bruto)
+    opt.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
+    des.exportManager.execute(opt)
+    rel = agrupar_3mf.agrupar_por_slot(bruto, final)
     os.remove(bruto)
     print(json.dumps(rel, ensure_ascii=False))
 ```
 
-Cole o conteúdo inteiro de `helpers/agrupar_3mf.py` no **começo** do script
-(o Fusion não enxerga os arquivos da skill). Testado: o Fusion exporta um
-`<object>` por corpo, nomeado, em `millimeter`, com a cor; o agrupamento
-devolve um objeto por slot com malhas fechadas e volume igual ao do B-rep
+**Último recurso:** se o `import` falhar, cole `helpers/agrupar_3mf.py` inteiro no
+começo do script e chame `agrupar_por_slot()` direto.
+
+Testado: o Fusion exporta um `<object>` por corpo, nomeado, em `millimeter`, com a cor;
+o agrupamento devolve um objeto por slot com malhas fechadas e volume igual ao do B-rep
 (diferença < 0,1 %).
 
 **Cor no Bambu Studio — testado:** o 3MF bruto do Fusion põe a cor só no
@@ -346,4 +419,4 @@ um corpo `slot1_calibracao`:
 
 Meça os furos no paquímetro. O desvio sistemático (furo saindo, por exemplo,
 0,15 mm menor em todos) é a **folga de processo** da máquina: grave no
-parâmetro `folga` das peças seguintes e anote na nota de Tecnologia do vault.
+parâmetro `folga` das peças seguintes e anote no seu perfil.

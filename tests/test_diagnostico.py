@@ -114,6 +114,29 @@ def test_sem_bambu_studio(monkeypatch):
     assert dg.achar_bambu_studio(_config(), registro=lambda: (None, None))["exe"] is None
 
 
+def test_diagnostico_mostra_maquina_e_perfil(tmp_path, monkeypatch):
+    monkeypatch.setenv("GENERATE_BAMBU_CONFIG", str(tmp_path / "config.json"))
+    config = _config()
+
+    def sem_fusion(_):
+        return {"estado": "porta_fechada", "detalhe": "x"}
+
+    def sem_bambu(_):
+        return {"exe": None, "versao": None, "origem": None}
+
+    r = dg.diagnosticar(config, testar=sem_fusion, achar=sem_bambu)
+
+    assert r["maquina"]["modelo"] == "A1"
+    assert r["impressao_testada"] is True
+    assert r["perfil"]["existe"] is False
+
+    config["maquina"]["modelo"] = "P1S"
+
+    r = dg.diagnosticar(config, testar=sem_fusion, achar=sem_bambu)
+
+    assert r["impressao_testada"] is False
+
+
 def test_diagnostico_junta_tudo(tmp_path):
     config = _config()
     config["pasta_saida"] = str(tmp_path)
