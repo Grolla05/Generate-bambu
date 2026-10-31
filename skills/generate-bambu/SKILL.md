@@ -5,7 +5,7 @@ license: MIT
 compatibility: "Windows; Autodesk Fusion com servidor MCP local ativo; Bambu Studio em inglês (testado na 02.08); Bambu Lab A1 com AMS Lite. Controle de tela é opcional."
 metadata:
   author: Felipe Grolla
-  version: "1.0.0"
+  version: "2.1.0"
 ---
 
 # generate-bambu
