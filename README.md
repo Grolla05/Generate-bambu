@@ -430,9 +430,11 @@ pytest
 ## 🛣️ Roadmap
 
 - [ ] Placa de calibração para medir a folga real de processo da máquina
-- [ ] Suporte a outras impressoras da linha Bambu Lab (A1 mini, P1S)
+- [x] Suporte a outras impressoras da linha Bambu Lab (A1 mini e P1S, conferidas só até o fatiamento)
+- [x] Perfil de impressão salvo junto com o projeto
+- [ ] Conferir a exportação por script com o Fusion real
 - [ ] Biblioteca de peças-base (chaveiro, porta-copo, placa) como pontos de partida
-- [ ] Opção de salvar o perfil de impressão junto com o projeto
+- [ ] Avaliações que comparam como cada agente respeita as paradas obrigatórias
 - [ ] Versão em inglês da documentação
 
 ---
