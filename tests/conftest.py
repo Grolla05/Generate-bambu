@@ -1,7 +1,7 @@
 """Configuração compartilhada dos testes.
 
-O helper `agrupar_3mf.py` vive dentro do plugin (e é colado no script do Fusion),
-então não é um pacote instalável: adicionamos a pasta dele ao sys.path.
+O helper `agrupar_3mf.py` vive dentro do plugin (e é colado no script do Fusion) e
+os scripts rodam soltos, sem pacote: adicionamos as duas pastas ao sys.path.
 """
 
 import re
@@ -15,6 +15,7 @@ PLUGIN = RAIZ
 SKILL = RAIZ / "skills" / "generate-bambu"
 
 sys.path.insert(0, str(SKILL / "helpers"))
+sys.path.insert(0, str(SKILL / "scripts"))
 
 
 def ler_frontmatter():

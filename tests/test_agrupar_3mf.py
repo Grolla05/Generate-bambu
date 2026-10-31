@@ -5,7 +5,7 @@ import zipfile
 
 import pytest
 
-from agrupar_3mf import NS_CORE, NS_MAT, agrupar_por_slot
+from agrupar_3mf import NS_CORE, NS_MAT, agrupar_por_slot, ler_slots_fusion, montar_3mf
 
 # Cubo unitário: 8 vértices e 12 triângulos, malha fechada e orientada para fora.
 _VERTICES = [
@@ -215,3 +215,53 @@ def test_avisa_cores_diferentes_no_mesmo_slot(tmp_path):
 
     assert len(rel["objetos"]) == 1
     assert any("cores diferentes" in a for a in rel["avisos"])
+
+
+@pytest.mark.parametrize("nome", ["slot0_x", "slot5_base"])
+def test_recusa_slot_fora_de_um_a_quatro(tmp_path, nome):
+    entrada = _escrever_3mf(tmp_path / "bruto.3mf", [_corpo(1, nome, 0, 1)])
+
+    with pytest.raises(ValueError, match="fora de 1 a 4"):
+        agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"))
+
+
+@pytest.mark.parametrize("nome", ["slot10abc", "slot1", "base_slot1"])
+def test_recusa_nome_sem_contrato(tmp_path, nome):
+    entrada = _escrever_3mf(tmp_path / "bruto.3mf", [_corpo(1, nome, 0, 1)])
+
+    with pytest.raises(ValueError, match="sem prefixo"):
+        agrupar_por_slot(str(entrada), str(tmp_path / "final.3mf"))
+
+
+def test_ler_slots_devolve_malha_agrupada(entrada):
+    slots, avisos = ler_slots_fusion(str(entrada))
+
+    assert [s["slot"] for s in slots] == ["slot1", "slot2"]
+    assert all(s["verts"] and s["tris"] and s["corpos"] for s in slots)
+    assert avisos == []
+
+
+def _slot(nome, cor=None):
+    verts = [(float(x), float(y), float(z)) for x, y, z in _VERTICES]
+    return {"slot": nome, "cor": cor, "verts": verts, "tris": _TRIANGULOS, "corpos": [nome]}
+
+
+def test_montar_aceita_slots_de_outra_origem(tmp_path):
+    rel = montar_3mf([_slot("slot2", "#123456FF")], str(tmp_path / "final.3mf"), avisos=["x"])
+
+    assert rel["objetos"][0]["cor"] == "#123456FF"
+    assert rel["tudo_fechado"]
+    assert rel["avisos"] == ["x"]
+
+
+def test_montar_avisa_slot_sem_cor(tmp_path):
+    rel = montar_3mf([_slot("slot1")], str(tmp_path / "final.3mf"))
+
+    assert any("cinza padrão" in a for a in rel["avisos"])
+
+
+def test_montar_recusa_mais_de_quatro_slots(tmp_path):
+    slots = [_slot(f"slot{i}") for i in range(1, 6)]
+
+    with pytest.raises(ValueError, match="AMS Lite tem 4"):
+        montar_3mf(slots, str(tmp_path / "final.3mf"))

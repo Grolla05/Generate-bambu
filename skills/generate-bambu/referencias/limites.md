@@ -1,6 +1,7 @@
 # Limites — o que este método não faz, e o que fazer então
 
-Leia quando o pedido não couber nas operações do Fusion por script.
+Leia quando o pedido não couber nas operações do Fusion por script. Forma orgânica
+de ninguém vai para o Blender (caso B).
 
 ---
 
@@ -94,16 +95,17 @@ anatomia.
 Aqui **a versão estilizada é a saída boa** — e é o forte deste fluxo. Ofereça,
 nesta ordem:
 
-1. **Versão estilizada ou geométrica.** Silhueta plana em camadas de cor,
-   low-poly, chibi. Costuma ser exatamente o que a pessoa queria. Se ela
-   topar, **gere e mostre** com medidas sensatas em vez de perguntar detalhe —
-   é mais rápido ajustar vendo.
+1. **Versão estilizada ou geométrica no Blender** (`blender-api.md`): low-poly,
+   chibi, volumes simples. Sem Blender, silhueta plana em camadas de cor no Fusion.
+   Costuma ser exatamente o que a pessoa queria. Se ela topar, **gere e mostre**
+   com medidas sensatas em vez de perguntar detalhe — é mais rápido ajustar vendo.
 2. **IA imagem→3D** (Tripo, Meshy, Hunyuan3D) para estilizado. Para
    hard-surface de precisão a malha sai mole e ondulada.
 3. **Escultura manual**, pelo usuário, em Blender ou ZBrush.
 
 Forma orgânica no Fusion existe (T-Splines, ambiente *Form*), mas não se
-dirige bem por script: não proponha esculpir rosto por código.
+dirige bem por script. E realismo não se resolve por código em programa nenhum:
+não proponha esculpir rosto fiel, nem no Blender.
 
 Imagem de santo cai aqui pela forma, mas tem o agravante de o catálogo
 religioso do projeto já estar travado em boa parte por licença de terceiros —
@@ -115,11 +117,12 @@ simplificada.
 
 ---
 
-## Quando o Fusion não está disponível
+## Quando o modelador não está disponível
 
-Não há caminho alternativo nesta skill: a modelagem é só no Fusion. Se ele não
-abrir ou o MCP não responder, diga isso, peça para o usuário abrir o Fusion e
-pare. Não gere SVG, malha em Python, OpenSCAD ou CadQuery no lugar.
+Se o modelador escolhido não responder, diga isso e peça para o usuário abri-lo.
+Peça de medida exata sem Fusion: pare, porque malha no Blender não tem parâmetros, e
+não troque em silêncio. Nunca gere SVG, malha solta em Python, OpenSCAD ou CadQuery
+no lugar.
 
 ---
 
