@@ -97,7 +97,7 @@ preenchendo o rebaixo — dois corpos encostados, sem sobrepor.
 
 ```python
 sk = root.sketches.add(plano)
-ti = sk.sketchTexts.createInput2('BUBBLE', 0.6)          # altura 6 mm
+ti = sk.sketchTexts.createInput2('AMIGOS', 0.6)          # altura 6 mm
 ti.setAsMultiLine(P(-1.5,-0.5,0), P(1.5,0.5,0),      # centrado em x = 0
                   adsk.core.HorizontalAlignments.CenterHorizontalAlignment,
                   adsk.core.VerticalAlignments.MiddleVerticalAlignment, 0)
@@ -110,12 +110,12 @@ for i in range(e.bodies.count):
 ```
 
 **Pegadinha testada:** a caixa do `setAsMultiLine` **não limita a largura** —
-o texto transborda dela. "BUBBLE" a 6 mm em Arial mede ~32 mm (≈ 5,4 mm por
+o texto transborda dela. Seis letras a 6 mm em Arial medem ~32 mm (≈ 5,4 mm por
 letra). Depois de extrudar, leia a bounding box das letras e confirme que não
 invadem furo nem outra cor; a validação 1c pega a sobreposição, mas é melhor
 dimensionar antes.
 
-**Outra pegadinha testada:** texto extrudado vira **um corpo por letra** (BUBBLE →
+**Outra pegadinha testada:** texto extrudado vira **um corpo por letra** (AMIGOS →
 6 corpos, fora da ordem de leitura), e `Combine/Join` de corpos que não se tocam não une — o Fusion
 devolve os corpos separados de novo. Não brigue com isso: nomeie todos com o
 mesmo `slotN_` e o `agrupar_3mf.py` junta no passo 3.
@@ -296,21 +296,23 @@ do script de modelagem.
 
 ---
 
-## Salvar no projeto "Bubble Studio 3D"
+## Salvar no projeto do Fusion
+
+O nome vem de `fusion.projeto`, em `python scripts/config.py mostrar`.
 
 ```python
+PROJETO = '<fusion.projeto>'
 dp = app.data.dataProjects
 proj = next((dp.item(i) for i in range(dp.count)
-             if dp.item(i).name == 'Bubble Studio 3D'), None)
+             if dp.item(i).name == PROJETO), None)
 if proj is None:
-    proj = dp.add('Bubble Studio 3D')
+    proj = dp.add(PROJETO)
 app.activeDocument.saveAs('Porta-copo Girassol', proj.rootFolder,
                           'generate-bambu', '')
 ```
 
-Na primeira peça o projeto ainda não existe (o hub tinha só Admin Project,
-Assets, Default Project) — o código cria. O salvamento sobe para a nuvem em
-segundo plano. Nas voltas de ajuste: `app.activeDocument.save('ajuste: …')`
+Na primeira peça o projeto ainda não existe, e o código cria. O salvamento sobe
+para a nuvem em segundo plano. Nas voltas de ajuste: `app.activeDocument.save('ajuste: …')`
 gera versão nova do mesmo documento.
 
 Se `saveAs` falhar (sem rede, hub offline), siga sem salvar e diga isso numa
@@ -417,4 +419,4 @@ um corpo `slot1_calibracao`:
 
 Meça os furos no paquímetro. O desvio sistemático (furo saindo, por exemplo,
 0,15 mm menor em todos) é a **folga de processo** da máquina: grave no
-parâmetro `folga` das peças seguintes e anote na nota de Tecnologia do vault.
+parâmetro `folga` das peças seguintes e anote no seu perfil.

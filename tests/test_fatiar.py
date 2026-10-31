@@ -222,6 +222,30 @@ def test_avisa_versao_nao_testada(entrada, config, bambu):
     assert any("03.00.00.00" in a for a in r["avisos"])
 
 
+def test_recusa_peca_acima_do_limite_da_maquina(entrada, config, bambu):
+    config["maquina"]["limite_mm"] = 20
+
+    with pytest.raises(pb.ErroPeca, match="não cabe"):
+        ft.processar(entrada, config, bambu, executar=executor())
+
+
+def test_recusa_mais_slots_que_a_maquina_tem(entrada, config, bambu):
+    config["maquina"]["slots"] = 1
+
+    with pytest.raises(ValueError, match="fora de 1 a 1"):
+        ft.processar(entrada, config, bambu, executar=executor())
+
+
+def test_torre_acompanha_a_mesa(entrada, config, bambu):
+    config["maquina"]["mesa_mm"] = 128
+
+    r = ft.processar(entrada, config, bambu, executar=executor())
+
+    with zipfile.ZipFile(r["arquivo"]) as z:
+        projeto = json.loads(z.read("Metadata/project_settings.config"))
+    assert float(projeto["wipe_tower_y"][0]) == pytest.approx(207.957 / 2, abs=0.001)
+
+
 def test_main_sem_bambu_studio(entrada, tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("GENERATE_BAMBU_CONFIG", str(tmp_path / "c.json"))
     monkeypatch.setattr(ft.diagnostico, "achar_bambu_studio",
@@ -278,6 +302,11 @@ def test_posicionar(largura, profundidade, n, y_torre, esperado):
 
 def test_posicionar_sem_lugar_para_a_torre():
     assert pb.posicionar(200, 200, 2, 207.957) is None
+
+
+def test_posicionar_na_mesa_pequena():
+    assert pb.posicionar(100, 100, 1, 150.0, 180) == (40, 40)
+    assert pb.maior_lado_multicor(180) == 117
 
 
 def test_uma_cor_ocupa_a_mesa_toda():

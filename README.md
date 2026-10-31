@@ -146,9 +146,6 @@ flowchart LR
 > [!IMPORTANT]
 > O que muda entre agentes está em [`referencias/agentes.md`](skills/generate-bambu/referencias/agentes.md).
 
-> [!WARNING]
-> O projeto `Bubble Studio 3D` e a nota de catálogo são padrões do autor. Ajuste conforme a seção Configuração.
-
 ---
 
 ## 🚀 Instalação
@@ -379,7 +376,7 @@ Generate-bambu/
 A configuração fica em `~/.generate-bambu/config.json`, fora da skill, porque atualizar o plugin troca a pasta dela. O modelo é [`config.example.json`](skills/generate-bambu/config.example.json):
 
 ```bash
-python skills/generate-bambu/scripts/config.py definir pasta_saida "D:/Bambu Lab/projeto"
+python skills/generate-bambu/scripts/config.py definir pasta_saida "D:/Impressao3D"
 ```
 
 O access code da impressora só é necessário para `status.py`. Rode `config.py codigo` você mesmo, no terminal, para ele não passar pela conversa.
@@ -389,9 +386,10 @@ O access code da impressora só é necessário para `status.py`. Rode `config.py
 | Pasta de saída dos `.3mf` | perguntada no primeiro uso | Chave `pasta_saida` |
 | Perfis do Bambu Studio | A1, `0.12mm Fine`, PLA Basic | Seção `bambu_studio` |
 | Modelador | escolhido peça a peça | `modelador.preferido` desempata |
-| Projeto no Fusion | `Bubble Studio 3D` | Criado automaticamente se não existir; ajuste em `SKILL.md` |
+| Projeto no Fusion | `generate-bambu` | Chave `fusion.projeto`; criado automaticamente se não existir |
+| Impressora | A1 | `config.py maquina "A1 mini"` ou `"P1S"` grava limites e perfis juntos; essas duas foram conferidas só até o fatiamento |
 | Altura de camada | `0,12 mm` | Parâmetro `camada` no início do design |
-| Registro no Obsidian | opcional | A skill pode anotar tempo e gramas de cada peça numa nota de catálogo. Remova a seção *"Depois: registrar no vault"* se não usar. |
+| Perfil | sem perfil | `~/.generate-bambu/perfil.md`, com o seu contexto. Modelo em [`perfil.example.md`](skills/generate-bambu/perfil.example.md) |
 
 ---
 
@@ -402,7 +400,7 @@ O access code da impressora só é necessário para `status.py`. Rode `config.py
 - **Volume de 250 × 250 × 250 mm**, o limite da Bambu Lab A1.
 - **O perfil de impressão não vem no `.3mf`.** A altura de camada de 0,12 mm é ajustada no Bambu Studio a cada projeto.
 - **Controle de tela é opcional e frágil.** Só entra como plano B, se o fatiamento por script falhar. Se um clique não faz efeito, a skill para e pergunta, em vez de repetir às cegas. Ele nunca clica em *Print plate*.
-- **Peça multicor com os dois lados acima de 195 mm é recusada:** falta lugar para a torre de purga.
+- **Peça multicor que ocupa quase a mesa inteira nos dois lados é recusada:** falta lugar para a torre de purga.
 - **Licença do Fusion.** Com a licença *Education* (uso não comercial), as peças servem para uso próprio e presentes. Para **vender** o que for impresso, revise a licença do Fusion antes.
 
 ---

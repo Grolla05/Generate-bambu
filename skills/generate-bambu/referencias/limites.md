@@ -27,10 +27,10 @@ de ninguém vai para o Blender (caso B).
 
 | Peça | Por quê | Saída |
 |---|---|---|
-| Rosto, corpo, animal realista, imagem de santo | forma arbitrária: não existe fórmula | caso B abaixo |
+| Rosto, corpo, animal realista, estátua | forma arbitrária: não existe fórmula | caso B abaixo |
 | Carro de marca, personagem, mascote, logo de time | design de terceiro — e estilizar não resolve | caso A abaixo |
-| Mais de 4 cores | AMS Lite tem 4 slots | reduzir paleta, ou pintar à mão no acabamento |
-| Peça maior que 250 mm | não cabe na mesa | partir em módulos (`fdm-a1.md`) |
+| Mais cores que `maquina.slots` | são 4 slots no AMS e no AMS Lite | reduzir paleta, ou pintar à mão no acabamento |
+| Peça maior que `maquina.limite_mm` | não cabe na mesa (250 mm na A1 e P1S, 175 mm na A1 mini) | partir em módulos (`fdm-a1.md`) |
 | Malha pronta (STL baixado) para remodelar | o fluxo modela do zero | importar só como referência visual; licença conferida antes |
 
 ---
@@ -75,11 +75,11 @@ Ofereça, nesta ordem:
 
 1. **Desenho original seu.** Um carro esportivo inventado, um motivo genérico
    que não seja um modelo específico, uma peça que evoque o tema sem ser a
-   coisa. Isto sim é saída, e é autoral: entra na linha de peças próprias sem
-   bloqueio de licença.
+   coisa. Isto sim é saída, e é autoral: pode ser vendida sem depender de
+   autorização de ninguém.
 2. **Modelo pronto com a licença conferida** (MakerWorld, Printables). Boa
-   parte tem licença não comercial, o que serve para uso próprio e não para a
-   loja. Aqui você é útil de verdade: não desenhar, mas **preparar** —
+   parte tem licença não comercial, o que serve para uso próprio e não para
+   venda. Aqui você é útil de verdade: não desenhar, mas **preparar** —
    conferir escala, reorientar, ver se cabe na A1 — e **ler a licença antes**.
 3. **Licenciar**, se o item for virar produto de verdade. Fora do seu alcance,
    mas é a resposta honesta quando o volume justifica.
@@ -89,8 +89,7 @@ mais firme que em contexto de uso próprio, e vale nomear a diferença.
 
 ### Caso B — a forma é arbitrária, mas de ninguém
 
-Rosto genérico, corpo, animal realista, imagem de santo, bicho inventado com
-anatomia.
+Rosto genérico, corpo, animal realista, estátua, bicho inventado com anatomia.
 
 Aqui **a versão estilizada é a saída boa** — e é o forte deste fluxo. Ofereça,
 nesta ordem:
@@ -107,10 +106,6 @@ Forma orgânica no Fusion existe (T-Splines, ambiente *Form*), mas não se
 dirige bem por script. E realismo não se resolve por código em programa nenhum:
 não proponha esculpir rosto fiel, nem no Blender.
 
-Imagem de santo cai aqui pela forma, mas tem o agravante de o catálogo
-religioso do projeto já estar travado em boa parte por licença de terceiros —
-confira a origem de cada modelo.
-
 Casos mistos existem — um porta-vela com relevo simples, um letreiro com
 silhueta. Se a parte orgânica é decorativa e secundária, siga; avise que sairá
 simplificada.
@@ -126,17 +121,5 @@ no lugar.
 
 ---
 
-## Por que o caso A é levado a sério aqui
-
-Não é zelo abstrato: é o gargalo declarado do próprio negócio. A nota de
-Tecnologia lista "organizar biblioteca de modelos por origem: autoral ×
-licença aberta comercial × domínio público" como pendência aberta, e o
-catálogo religioso já está travado em boa parte por licença de terceiros.
-
-Peça autoral é a saída desse gargalo. Toda vez que um pedido de IP de
-terceiros vira um **desenho original**, o catálogo ganha um item que pode ser
-vendido sem depender de autorização de ninguém. É por isso que o caso A
-oferece "desenho original seu" em primeiro lugar, e não como consolo.
-
-Imprimir para si é uma coisa; vender é outra. Nomeie a diferença quando o
-contexto for comercial — uma linha basta.
+Imprimir para si é uma coisa; vender é outra. Nomeie a diferença quando o contexto for
+comercial: uma linha basta.

@@ -13,7 +13,6 @@ import uuid
 import zipfile
 from xml.sax.saxutils import quoteattr
 
-MESA_MM = 256.0
 MARGEM_MM = 3.0
 # A torre de purga mora no canto de cima à esquerda: x até 60 e do y dela até o fim da mesa.
 TORRE_X_MM = 60.0
@@ -56,17 +55,22 @@ def caixa(slots):
     return min(x), min(y), min(z), max(x), max(y), max(z)
 
 
-def posicionar(largura, profundidade, n_slots, y_torre):
+def maior_lado_multicor(mesa_mm):
+    """Maior lado de peça multicor que ainda deixa a torre de purga caber."""
+    return mesa_mm - TORRE_X_MM - MARGEM_MM
+
+
+def posicionar(largura, profundidade, n_slots, y_torre, mesa_mm=256):
     """(x0, y0) do canto da peça na mesa, ou None se não sobrar lugar para a torre.
 
     Centra sempre que der. Multicor que invade a torre anda o mínimo para sair dela.
     """
-    x0, y0 = (MESA_MM - largura) / 2, (MESA_MM - profundidade) / 2
+    x0, y0 = (mesa_mm - largura) / 2, (mesa_mm - profundidade) / 2
     limite_y = y_torre - FOLGA_TORRE_MM
     if n_slots == 1 or x0 >= TORRE_X_MM or y0 + profundidade <= limite_y:
         return x0, y0
     opcoes = []
-    if TORRE_X_MM + largura <= MESA_MM - MARGEM_MM:
+    if largura <= maior_lado_multicor(mesa_mm):
         opcoes.append((TORRE_X_MM - x0, TORRE_X_MM, y0))
     if limite_y - profundidade >= MARGEM_MM:
         opcoes.append((y0 + profundidade - limite_y, x0, limite_y - profundidade))

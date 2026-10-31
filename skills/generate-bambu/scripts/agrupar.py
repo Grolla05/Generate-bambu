@@ -19,21 +19,22 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "helpers"))
 
 import config as cfg  # noqa: E402
-from agrupar_3mf import MAX_SLOTS, agrupar_por_slot  # noqa: E402
+from agrupar_3mf import agrupar_por_slot  # noqa: E402
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("bruto", help=".3mf que o modelador exportou")
     parser.add_argument("final", help=".3mf de um objeto por slot")
-    parser.add_argument("--slots", type=int, default=MAX_SLOTS, help="slots da impressora")
+    parser.add_argument("--slots", type=int, help="slots da impressora; padrão: configuração")
     parser.add_argument("--apagar-bruto", action="store_true", help="apaga o bruto se der certo")
     args = parser.parse_args(argv)
 
     bruto, final = Path(args.bruto), Path(args.final)
     try:
+        slots = args.slots or cfg.carregar()["maquina"]["slots"]
         final.parent.mkdir(parents=True, exist_ok=True)
-        relatorio = agrupar_por_slot(str(bruto), str(final), max_slots=args.slots)
+        relatorio = agrupar_por_slot(str(bruto), str(final), max_slots=slots)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile, ET.ParseError) as erro:
         cfg.imprimir_json({"erro": str(erro)})
         return 2

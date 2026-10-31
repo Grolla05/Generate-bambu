@@ -107,8 +107,9 @@ b.imprimir_json(resultado)
 ```
 
 Precisa dar `ok: true`. `validar()` confere contrato, material, malha fechada, volume,
-250 mm, cor única por slot e sobreposição entre cores, sempre na malha com
-modificadores aplicados. A lista `erros` diz o que corrigir. A linha sai no console
+limite da máquina, cor única por slot e sobreposição entre cores, sempre na malha com
+modificadores aplicados. Fora da A1, passe os valores de `maquina`:
+`b.validar(max_slots=4, limite_mm=175)`, e o mesmo em `b.exportar()`. A lista `erros` diz o que corrigir. A linha sai no console
 com o prefixo `RESULTADO`.
 
 Altura em múltiplo de camada não é cobrada aqui: em forma curva não existe. Avise na

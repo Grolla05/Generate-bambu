@@ -10,8 +10,8 @@ botão Print plate.
 
 Códigos de saída: 0 ok, 2 entrada inválida, 3 Bambu Studio recusou, 4 Bambu Studio ausente.
 
-Porte do fatiador do backend Bubble Studio (validado no Bambu Studio 02.08.03.66). O CLI
-grava `result.json` (`return_code`, `error_string`) no diretório de saída.
+Validado no Bambu Studio 02.08.03.66. O CLI grava `result.json` (`return_code`,
+`error_string`) no diretório de saída.
 """
 
 import argparse
@@ -34,7 +34,9 @@ from agrupar_3mf import ler_slots_fusion  # noqa: E402
 ARQUIVO_FATIADO = "fatiado.3mf"
 PASTA_FATIADOS = "_fatiados"
 # A torre cresce com cores e altura: se sair da mesa ou bater na peça, desce e tenta de novo.
+# Valores da mesa de 256 mm, proporcionais nas outras.
 Y_TORRE = (207.957, 160.0, 110.0)
+MESA_DE_REFERENCIA_MM = 256
 ERROS_DE_TORRE = {-101, -104}
 TOLERANCIA_MM = 0.5
 _SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -116,11 +118,18 @@ def _rgb(cor):
 def processar(entrada, config, bambu, *, executar=subprocess.run):
     """Do .3mf da skill ao fatiado conferido. Devolve o relatório."""
     entrada = Path(entrada)
-    slots, avisos = ler_slots_fusion(entrada, agrupado=True)
+    maquina = config["maquina"]
+    mesa = maquina["mesa_mm"]
+    slots, avisos = ler_slots_fusion(entrada, agrupado=True, max_slots=maquina["slots"])
     cores = [_rgb(s["cor"]) for s in slots]
     xmin, ymin, zmin, xmax, ymax, zmax = projeto_bambu.caixa(slots)
     largura, profundidade = xmax - xmin, ymax - ymin
     esperado = [round(v, 2) for v in (largura, profundidade, zmax - zmin)]
+    if any(v > maquina["limite_mm"] for v in esperado):
+        raise projeto_bambu.ErroPeca(
+            f"Peça de {esperado} mm não cabe: o limite da {maquina['modelo']} é "
+            f"{maquina['limite_mm']} mm."
+        )
 
     secao = config["bambu_studio"]
     versao = bambu.get("versao") or perfis.VERSAO_TESTADA
@@ -133,8 +142,9 @@ def processar(entrada, config, bambu, *, executar=subprocess.run):
     ultimo_erro = None
     with tempfile.TemporaryDirectory(dir=destino) as temporario:
         pasta = Path(temporario)
-        for y_torre in Y_TORRE:
-            posicao = projeto_bambu.posicionar(largura, profundidade, len(slots), y_torre)
+        for y_base in Y_TORRE:
+            y_torre = round(y_base * mesa / MESA_DE_REFERENCIA_MM, 3)
+            posicao = projeto_bambu.posicionar(largura, profundidade, len(slots), y_torre, mesa)
             if posicao is None:
                 continue
             configuracao = perfis.config_projeto(perfis_bbl, secao, cores, versao, y_torre)
@@ -173,7 +183,7 @@ def processar(entrada, config, bambu, *, executar=subprocess.run):
         )
     raise projeto_bambu.ErroPeca(
         f"Peça multicor de {largura:.0f} × {profundidade:.0f} mm não deixa lugar para a torre de "
-        "purga: reduza um dos lados para menos de 195 mm."
+        f"purga: reduza um dos lados para até {projeto_bambu.maior_lado_multicor(mesa):.0f} mm."
     )
 
 

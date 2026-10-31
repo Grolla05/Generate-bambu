@@ -54,6 +54,67 @@ def test_definir_recusa_chave_desconhecida(tmp_path, chave):
         cfg.definir(chave, "x", tmp_path / "config.json")
 
 
+def test_definir_converte_numero(tmp_path):
+    arquivo = tmp_path / "config.json"
+
+    cfg.definir("maquina.slots", "2", arquivo)
+
+    assert cfg.carregar(arquivo)["maquina"]["slots"] == 2
+
+
+def test_definir_recusa_texto_em_campo_numerico(tmp_path):
+    with pytest.raises(ValueError, match="número"):
+        cfg.definir("maquina.slots", "muitos", tmp_path / "config.json")
+
+
+@pytest.mark.parametrize("nome", list(cfg.MAQUINAS))
+def test_maquina_grava_limites_e_perfis_juntos(tmp_path, nome):
+    arquivo = tmp_path / "config.json"
+    cfg.definir("bambu_studio.exe", "x.exe", arquivo)
+
+    cfg.escolher_maquina(nome, arquivo)
+
+    config = cfg.carregar(arquivo)
+    preset = cfg.MAQUINAS[nome]
+    assert config["maquina"]["modelo"] == nome
+    assert config["maquina"]["limite_mm"] == preset["limite_mm"]
+    assert config["bambu_studio"]["processo"] == preset["processo"]
+    assert config["bambu_studio"]["exe"] == "x.exe"
+
+
+def test_maquina_recusa_nome_desconhecido(tmp_path):
+    with pytest.raises(ValueError, match="desconhecida"):
+        cfg.escolher_maquina("Ender 3", tmp_path / "config.json")
+
+
+def test_padrao_e_o_preset_da_a1():
+    preset = cfg.MAQUINAS[cfg.PADRAO["maquina"]["modelo"]]
+
+    assert cfg.PADRAO["maquina"]["limite_mm"] == preset["limite_mm"]
+    assert cfg.PADRAO["bambu_studio"]["processo"] == preset["processo"]
+
+
+def test_perfil_fica_ao_lado_da_config(tmp_path):
+    arquivo = tmp_path / "config.json"
+
+    assert cfg.perfil(arquivo) == {"caminho": str(tmp_path / "perfil.md"), "existe": False}
+
+    (tmp_path / "perfil.md").write_text("x", encoding="utf-8")
+
+    assert cfg.perfil(arquivo)["existe"] is True
+    assert cfg.mostrar(arquivo)["perfil"]["existe"] is True
+
+
+def test_comando_maquina(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("GENERATE_BAMBU_CONFIG", str(tmp_path / "config.json"))
+
+    assert cfg.main(["maquina", "P1S"]) == 0
+    assert cfg.main(["maquina", "Ender 3"]) == 2
+    capsys.readouterr()
+
+    assert cfg.carregar()["maquina"]["modelo"] == "P1S"
+
+
 def test_access_code_fica_fora_da_config(tmp_path):
     arquivo = tmp_path / "config.json"
     cfg.definir("impressora.serial", "ABC", arquivo)

@@ -2,8 +2,14 @@
   "versao": 1,
   "pasta_saida": null,
   "fusion": {
-    "projeto": null,
+    "projeto": "generate-bambu",
     "url_mcp": "http://127.0.0.1:27182/mcp"
+  },
+  "maquina": {
+    "modelo": "A1",
+    "mesa_mm": 256,
+    "limite_mm": 250,
+    "slots": 4
   },
   "bambu_studio": {
     "exe": null,
@@ -19,5 +25,10 @@
   "modelador": {
     "preferido": null,
     "blender_exe": null
+  },
+  "registro": {
+    "prefixo_id": "A",
+    "nota": null,
+    "secao": null
   }
 }

@@ -14,6 +14,7 @@ from pathlib import Path
 
 import config as cfg
 import fatiar as ft
+import projeto_bambu as pb
 import pytest
 from agrupar_3mf import montar_3mf
 
@@ -42,11 +43,46 @@ def _slot(n, cor, *caixas):
     return {"slot": f"slot{n}", "cor": cor, "verts": verts, "tris": tris, "corpos": ["a"]}
 
 
-def _fatiar(tmp_path, slots, nome="peca"):
+def _fatiar(tmp_path, slots, nome="peca", maquina=None):
     entrada = tmp_path / f"{nome}.3mf"
     montar_3mf(slots, str(entrada))
-    config = json.loads(json.dumps(cfg.PADRAO))
+    if maquina:
+        config = cfg.escolher_maquina(maquina, tmp_path / "config.json")
+    else:
+        config = json.loads(json.dumps(cfg.PADRAO))
     return ft.processar(entrada, config, {"exe": EXE, "versao": None})
+
+
+def _peca_de_duas_cores():
+    z1 = 17 * CAMADA
+    return [
+        _slot(1, "#E8B647FF", _caixa(-30, -15, 0, 30, 15, z1)),
+        _slot(2, "#1A73E8FF", _caixa(-20, -10, z1, 20, 10, z1 + 7 * CAMADA)),
+    ]
+
+
+@pytest.mark.parametrize("maquina", list(cfg.MAQUINAS))
+def test_cada_maquina_fatia_com_o_proprio_perfil(tmp_path, maquina):
+    r = _fatiar(tmp_path, _peca_de_duas_cores(), maquina=maquina)
+
+    assert r["camada_mm"] == CAMADA
+    assert [f["slot"] for f in r["filamentos"]] == ["slot1", "slot2"]
+    with zipfile.ZipFile(r["arquivo"]) as z:
+        projeto = json.loads(z.read("Metadata/project_settings.config"))
+    assert projeto["printer_settings_id"] == cfg.MAQUINAS[maquina]["impressora"]
+
+
+def test_mesa_pequena_usa_o_lado_que_o_script_promete(tmp_path):
+    lado = pb.maior_lado_multicor(cfg.MAQUINAS["A1 mini"]["mesa_mm"])
+    z1 = 10 * CAMADA
+    slots = [
+        _slot(1, "#E8B647FF", _caixa(0, 0, 0, lado, lado, z1)),
+        _slot(2, "#1A73E8FF", _caixa(20, 20, z1, 60, 60, z1 + 4 * CAMADA)),
+    ]
+
+    r = _fatiar(tmp_path, slots, maquina="A1 mini")
+
+    assert r["dimensoes_mm"][:2] == pytest.approx([lado, lado], abs=0.05)
 
 
 def test_tres_cores_com_relevo_e_duas_cascas(tmp_path):

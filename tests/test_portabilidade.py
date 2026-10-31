@@ -4,6 +4,8 @@ import json
 import re
 import subprocess
 
+from pathlib import Path
+
 import pytest
 import yaml
 from conftest import RAIZ, SKILL, ler_frontmatter
@@ -58,6 +60,14 @@ CAPACIDADES = [
     "focar ou maximizar janela",
     "ler nota",
     "inserir em nota",
+]
+FORA_DO_REPOSITORIO = [
+    "Bubble Studio",
+    "catálogo religioso",
+    "8 dos 11",
+    "D:/Bambu Lab",
+    "Empresa impressora 3D",
+    "Risco Jurídico",
 ]
 GATILHOS = ["chaveiro", "lembrancinha", "vaso", "keychain", "vase", "3MF", "Bambu"]
 
@@ -178,6 +188,37 @@ def test_skill_manda_o_usuario_clicar_em_imprimir():
     assert "Nenhum script desta skill envia peça para a" in _skill_md()
     arquivos = (SKILL / "scripts").glob("*.py")
     assert not [p.name for p in arquivos if p.name in ("imprimir.py", "enviar.py")]
+
+
+def test_repositorio_publico_nao_carrega_o_negocio():
+    arquivos = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+        cwd=RAIZ, capture_output=True, text=True, check=True,
+    ).stdout.splitlines()
+
+    achados = {}
+    for rel in arquivos:
+        caminho = RAIZ / rel
+        if rel == Path(__file__).relative_to(RAIZ).as_posix() or not caminho.is_file():
+            continue
+        texto = caminho.read_text(encoding="utf-8", errors="ignore")
+        termos = [t for t in FORA_DO_REPOSITORIO if t in texto]
+        if termos:
+            achados[rel] = termos
+
+    assert achados == {}
+
+
+def test_prefixo_antigo_de_cor_so_existe_na_leitura():
+    arquivos = subprocess.run(
+        ["git", "grep", "-il", "bubble", "--", "skills", "README.md"],
+        cwd=RAIZ, capture_output=True, text=True, check=False,
+    ).stdout.split()
+
+    assert set(arquivos) <= {
+        "skills/generate-bambu/helpers/agrupar_3mf.py",
+        "skills/generate-bambu/referencias/fusion-api.md",
+    }
 
 
 def test_versao_do_helper_bate_com_a_skill():
