@@ -5,7 +5,7 @@ license: MIT
 compatibility: "Windows; Python 3.10+; Autodesk Fusion com servidor MCP local ativo ou Blender 5.1+; Bambu Studio testado na 02.08.03.66; Bambu Lab A1 com AMS Lite (A1 mini e P1S conferidas até o fatiamento). Controle de tela é opcional."
 metadata:
   author: Felipe Grolla
-  version: "3.0.0"
+  version: "3.1.0"
 ---
 
 # generate-bambu

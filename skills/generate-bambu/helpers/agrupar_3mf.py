@@ -28,7 +28,7 @@ from xml.sax.saxutils import escape
 
 NS_CORE = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
 NS_MAT = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02"
-APLICACAO = "generate-bambu 3.0.0"
+APLICACAO = "generate-bambu 3.1.0"
 MAX_SLOTS = 4
 PREFIXO_COR = "cor_"
 RE_SLOT = re.compile(r"^slot(0|[1-9]\d*)_.+$")
