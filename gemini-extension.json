@@ -1,0 +1,10 @@
+{
+  "name": "generate-bambu",
+  "version": "1.0.0",
+  "description": "Modela peças no Autodesk Fusion via MCP, exporta .3mf multicor (um objeto por slot do AMS, camada 0,12 mm) e prepara a impressão no Bambu Studio, com aprovação humana antes de imprimir.",
+  "mcpServers": {
+    "fusion": {
+      "httpUrl": "http://127.0.0.1:27182/mcp"
+    }
+  }
+}

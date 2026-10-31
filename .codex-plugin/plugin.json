@@ -1,0 +1,19 @@
+{
+  "name": "generate-bambu",
+  "version": "1.0.0",
+  "description": "Modela peças no Autodesk Fusion via MCP, exporta .3mf multicor (um objeto por slot do AMS, camada 0,12 mm) e prepara a impressão no Bambu Studio, com aprovação humana antes de imprimir.",
+  "author": {
+    "name": "Felipe Grolla",
+    "url": "https://github.com/Grolla05"
+  },
+  "homepage": "https://github.com/Grolla05/Generate-bambu",
+  "repository": "https://github.com/Grolla05/Generate-bambu",
+  "license": "MIT",
+  "keywords": ["3d-printing", "bambu-lab", "autodesk-fusion", "mcp", "3mf", "cad"],
+  "skills": "./skills/",
+  "mcpServers": "./mcp.json",
+  "interface": {
+    "displayName": "Generate Bambu",
+    "category": "Productivity"
+  }
+}
