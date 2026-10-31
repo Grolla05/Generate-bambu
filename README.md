@@ -257,6 +257,10 @@ codex plugin marketplace upgrade grolla05-plugins
 ```
 
 ```bash
+codex plugin add generate-bambu@grolla05-plugins
+```
+
+```bash
 gemini extensions update generate-bambu
 ```
 
