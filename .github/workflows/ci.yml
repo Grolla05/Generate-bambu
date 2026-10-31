@@ -32,6 +32,12 @@ jobs:
       - name: Ruff
         run: ruff check .
 
+      # Fora do requirements-dev.txt: skills-ref exige Python 3.11+ e a matriz cobre 3.10.
+      - name: Validar a skill (Agent Skills)
+        run: |
+          python -m pip install skills-ref==0.1.1
+          agentskills validate skills/generate-bambu
+
   test:
     name: Testes (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -53,8 +59,27 @@ jobs:
 
       # Compila todo .py do repositório: pega erro de sintaxe antes dos testes.
       - name: Compilar todos os arquivos Python
-        run: python -m compileall -q plugins tests
+        run: python -m compileall -q skills tests
 
       # agrupar_3mf.py, trechos Python da documentação e manifestos do plugin.
       - name: Pytest
         run: pytest
+
+  instalador:
+    name: Instalador (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Instalar dependências de desenvolvimento
+        run: python -m pip install -r requirements-dev.txt
+
+      # O shell padrão aqui é pwsh; os testes chamam powershell.exe (5.1), que é o alvo.
+      - name: Pytest
+        run: pytest tests/test_instalar.py

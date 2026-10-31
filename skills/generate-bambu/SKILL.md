@@ -1,6 +1,11 @@
 ---
-name: "generate-bambu"
-description: "Modela peça para impressão 3D direto no Autodesk Fusion via MCP, numa sequência fixa: cria o design paramétrico no projeto Bubble Studio 3D, valida e mostra no Fusion, espera o OK, só então exporta o .3mf multicor (um objeto por slot do AMS, camada 0,12 mm), abre o Bambu Studio, carrega o projeto e pergunta antes de imprimir. Use em qualquer pedido de criar, desenhar, modelar ou projetar objeto para impressão 3D, placa, letreiro, chaveiro, lembrancinha, engrenagem, vaso, pote, suporte ou peça multicolor. Modelagem só pelo Fusion — sem SVG, sem Blender. Limite 250×250×250 mm (Bambu Lab A1)."
+name: generate-bambu
+description: "Modela e prepara peças para impressão 3D multicor no Autodesk Fusion e no Bambu Studio. Use para criar, desenhar, projetar ou modelar placa, letreiro, chaveiro, lembrancinha, ímã, porta-copo, vaso, pote, caixa, suporte, engrenagem ou peça multicolor. Use for 3D print, 3D model, keychain, nameplate, sign, coaster, vase, box, bracket, gear, multicolor, 3MF, Bambu Lab, AMS, Fusion. Não use para SVG ou desenho 2D que não vá para impressão 3D."
+license: MIT
+compatibility: "Windows; Autodesk Fusion com servidor MCP local ativo; Bambu Studio em inglês (testado na 02.08); Bambu Lab A1 com AMS Lite. Controle de tela é opcional."
+metadata:
+  author: Felipe Grolla
+  version: "2.1.0"
 ---
 
 # generate-bambu
@@ -17,22 +22,24 @@ não troque a ordem, e não substitua o que cada passo entrega.
 6. perguntar antes de imprimir
 ```
 
-**Cinco regras que valem o fluxo inteiro:**
+**Seis regras que valem o fluxo inteiro:**
 
 - **A modelagem é no Fusion, e só.** Toda geometria nasce por script no
-  Fusion via `fusion_mcp_execute`. Nunca gere SVG, malha em Python, OpenSCAD
-  ou CadQuery como substituto. Se o Fusion não responder, pare e peça para o
-  usuário abri-lo (passo 0).
+  Fusion via `fusion_mcp_execute`. Nunca gere SVG, malha em Python, OpenSCAD,
+  CadQuery ou Blender como substituto. Se o Fusion não responder, pare e peça
+  para o usuário abri-lo (passo 0).
 - **A saída é `.3mf`, e só.** Nunca ZIP, nunca STL, nunca OBJ, nunca uma pasta
   de arquivos. Um objeto por slot do AMS, dentro de um `.3mf` só.
 - **A prévia é o design aberto no Fusion.** O usuário gira a peça lá, na tela
   dele. Seus screenshots servem para **você** conferir o que construiu antes
   de mostrar — não são a prévia, e nunca substituem o design aberto.
 - **Nada de "de memória".** Se for falar do que está na tela do Fusion ou do
-  Bambu Studio, tire o screenshot e leia. Se não conseguir, diga que não
-  conseguiu.
+  Bambu Studio, capture a tela e leia. Se não conseguir, diga isso e peça o
+  dado ao usuário. Nunca presuma.
 - **O `.3mf` só nasce depois do OK.** O passo 1 modela e salva o design, mas
   não exporta arquivo de impressão nenhum.
+- **Imprimir só com "sim" explícito.** Nem a aprovação da forma nem um pedido
+  feito antes valem pelo passo 6: a pergunta vem depois do slice.
 
 Arquivos desta skill (leia sob demanda):
 
@@ -42,6 +49,7 @@ Arquivos desta skill (leia sob demanda):
 | `helpers/agrupar_3mf.py` | passo 3 — cole inteiro no script de exportação |
 | `referencias/fdm-a1.md` | ao decidir espessura, folga, orientação, balanço |
 | `referencias/limites.md` | quando o pedido não couber no método |
+| `referencias/agentes.md` | para traduzir uma capacidade na ferramenta do seu agente, ou ligar o MCP do Fusion |
 
 ---
 
@@ -74,10 +82,15 @@ usuário topar, **modele e mostre**.
 **3. Quantas cores?** O AMS Lite tem 4 slots. Uma cor = um `slotN` = um
 objeto no 3MF = um filamento. Acima de 2 cores, avise do custo de purga.
 
-**4. O Fusion está respondendo?** `fusion_mcp_read` com
+**4. Cabe na mesa?** O limite é 250×250×250 mm (Bambu Lab A1). Peça maior:
+diga na primeira resposta e proponha dividir ou reduzir.
+
+**5. O Fusion está respondendo?** `fusion_mcp_read` com
 `{queryType: "document", operation: "open"}`. Se der erro ou não responder,
-diga que o Fusion não está acessível e peça para o usuário abri-lo (ou abra
-com `computer_open_application`, se tiver acesso). Não siga sem ele.
+diga que o Fusion não está acessível e peça para o usuário abri-lo (ou abra o
+programa, se tiver controle de tela). Se ele já estiver aberto, peça para
+ligar o servidor em Preferences → General → API → Fusion MCP Server, com
+*Apply* e depois *OK*. Não siga sem ele.
 
 `referencias/limites.md` tem a triagem completa.
 
@@ -125,8 +138,9 @@ mostrar. Confira também espessuras mínimas e balanços contra `fdm-a1.md`.
 **1d. Conferir com os olhos e salvar.** Screenshots `iso-top-right`, `front`
 e `top` com `fusion_mcp_read` (`queryType: "screenshot"`). Olhe de verdade:
 o relevo está em cima da base, o texto legível e no lugar, o furo onde
-deveria? Se algo destoar do pedido, conserte e tire de novo. Então salve o
-documento no projeto **Bubble Studio 3D** com o nome da peça em duas a quatro
+deveria? Se algo destoar do pedido, conserte e tire de novo. Se o seu agente
+não enxergar a imagem que o MCP devolve, diga isso e peça para o usuário
+conferir esses pontos no Fusion. Então salve o documento no projeto **Bubble Studio 3D** com o nome da peça em duas a quatro
 palavras — nunca "Peça" ou "Teste" (o código cria o projeto se faltar).
 
 **1e. Escreva o texto curto:** diga que a peça está aberta no Fusion para ele
@@ -180,22 +194,25 @@ Um arquivo. Nada de ZIP, nada de pasta com várias peças soltas, nada de STL.
 
 ## Passo 4 — Abrir o Bambu Studio
 
+Os passos 4 e 5 pedem controle de tela. **Sem ele, vá direto para "Sem
+controle de tela", depois do passo 6.** Não finja que abriu nada.
+
 Assuma sempre que está fechado. Interface em **inglês**.
 
-`computer_request_access` → Bambu Studio; `computer_open_application`;
-`computer_wait` ~5 s; **screenshot**.
+Peça acesso ao Bambu Studio, abra o programa, espere ~5 s e **capture a
+tela**.
 
 Ele demora e costuma abrir com algo na frente: update (*Later*), release notes
 (*OK*), login (pode ignorar), ou seleção de impressora na primeira execução
 (**Bambu Lab A1**). Feche o que estiver na frente e maximize a janela — botão
 fora da área visível é a causa mais comum de clique que não acontece.
 
-Controle por screenshot é frágil: **screenshot antes de cada ação que muda
+Controle de tela é frágil: **capture a tela antes de cada ação que muda
 estado, e depois para confirmar que mudou.** Nunca encadeie três cliques às
 cegas. Prefira atalho de teclado a clique.
 
-Se não conseguir abrir, **diga que não conseguiu** e pare. Não descreva o que
-o programa faria.
+Se tiver controle de tela e ainda assim não conseguir abrir, **diga que não
+conseguiu** e siga "Sem controle de tela". Não descreva o que o programa faria.
 
 ---
 
@@ -203,15 +220,14 @@ o programa faria.
 
 **Carregar.** `Ctrl+O` (File → Open Project). No diálogo do Windows **não
 navegue pelas pastas**: clique no campo *File name*, digite o caminho completo
-com `computer_type` e `Enter`. O espaço em `D:\Bambu Lab` não precisa de
-aspas. Se perguntar entre abrir como projeto ou importar geometria, escolha
+e tecle `Enter`. O espaço em `D:\Bambu Lab` não precisa de aspas. Se perguntar entre abrir como projeto ou importar geometria, escolha
 projeto.
 
 **Dois diálogos aparecem, nesta ordem — testados:**
 
 1. *Standard 3mf Import color* — o Bambu Studio leu as cores do arquivo e
    mostra a prévia já colorida e uma tabela *Matching* (cor → filamento).
-   Screenshot e confira: uma cor por slot, prévia com as cores certas. Se
+   Capture a tela e confira: uma cor por slot, prévia com as cores certas. Se
    *Sync info* já trouxe os filamentos do AMS, use *Color match* para casar
    com os rolos carregados; senão o padrão *Append* cria um filamento novo
    por cor. Então *OK*.
@@ -229,8 +245,8 @@ aqui**: o erro volta na próxima peça.
 
 **Altura de camada 0,12 mm.** No painel de processo à direita, escolha o
 perfil de 0.12 mm (na A1 costuma aparecer como *0.12mm Fine*) ou abra as
-configurações e ponha `0.12` em *Layer height*. Screenshot para confirmar que
-pegou. Isto não vem no arquivo: o 3MF carrega geometria e cor, não o perfil de
+configurações e ponha `0.12` em *Layer height*. Capture a tela para confirmar
+que pegou. Isto não vem no arquivo: o 3MF carrega geometria e cor, não o perfil de
 impressão.
 
 **Conferir os filamentos.** A lista de objetos mostra um objeto com as
@@ -241,14 +257,14 @@ cor certa, e depois do slice que a lista de filamentos usados tem um por cor.
 O número do filamento tem que ser o do rolo certo no AMS — quem decide o slot
 é o Bambu Studio, não o arquivo.
 
-**Fatiar.** *Slice plate* ou `Ctrl+R`. Espere; screenshot para confirmar — a
-tela vira pré-visualização de camadas e o botão vira *Print plate*. Se falhar,
+**Fatiar.** *Slice plate* ou `Ctrl+R`. Espere; capture a tela para confirmar —
+a tela vira pré-visualização de camadas e o botão vira *Print plate*. Se falhar,
 o motivo aparece em vermelho: objeto fora da área, malha não-manifold, ou
 nenhum filamento configurado (PLA Basic serve de default). Malha não-manifold
 não deveria chegar aqui — os passos 1 e 3 pegam isso.
 
 **Quando travar.** Se um clique não produzir o efeito esperado, não repita —
-tire screenshot e leia a tela (quase sempre há um diálogo na frente, ou a
+capture a tela e leia (quase sempre há um diálogo na frente, ou a
 janela perdeu o foco). Duas ou três tentativas, então pare, descreva o que
 está na tela e pergunte. O usuário está na frente do computador.
 
@@ -264,6 +280,25 @@ Então pergunte: **posso mandar imprimir?**
 
 **Pare aqui.** Não clique em *Print plate* → *Send*, nem em *Send and print*,
 sem a resposta. A peça vira plástico e tempo de máquina a partir desse clique.
+
+---
+
+## Sem controle de tela
+
+Se o seu agente não controla a tela, os passos 1 a 3 valem iguais e os passos
+4 a 6 viram um roteiro para o usuário. A regra de não inventar continua: tudo
+que você disser sobre o Bambu Studio vem do que ele informar.
+
+1. Dê o caminho completo do `.3mf`.
+2. Passe as instruções do passo 5, nesta ordem: abrir com `Ctrl+O`; no
+   diálogo de cor, conferir e dar *OK*; em *Multi-part object detected*,
+   responder **Yes**; escolher o perfil de 0,12 mm; fatiar com `Ctrl+R`.
+3. Peça os números: tamanho em X, Y e Z no painel *Size*, altura de camada,
+   tempo estimado e gramas por filamento.
+4. Compare o tamanho com o que o Fusion mostrou. Se não bater, volte ao passo
+   3 e reexporte, sem escalar no Bambu Studio.
+5. Feche com a pergunta do passo 6. Quem clica em *Print plate* é o usuário:
+   nunca diga que a peça foi enviada.
 
 ---
 
@@ -286,8 +321,10 @@ dependência de autorização de criador** (ver o bloqueio de licença da tabela
 
 IDs autorais usam prefixo **A** (A01, A02…) para não colidir com os P## da
 planilha da MakerWorld. Em *Arquivo*, ponha o `.3mf` e o nome do documento no
-Fusion. Leia com `obsidian_get_file_contents`, continue a numeração, e insira
-com `obsidian_patch_content` — não reescreva a nota.
+Fusion. Leia a nota, continue a numeração e insira só a linha nova — não
+reescreva a nota. Sem acesso ao vault, devolva a linha Markdown pronta para o
+usuário colar. Sem tempo e gramas, não registre nem invente: diga que o
+registro ficou pendente.
 
 Na primeira peça registrada, vale dizer o gancho: a nota documenta que 8 dos
 11 produtos do catálogo religioso estão travados por licença de terceiros.

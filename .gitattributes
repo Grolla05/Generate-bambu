@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+# O PowerShell 5.1 espera CRLF em scripts do Windows.
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.gif binary

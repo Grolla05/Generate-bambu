@@ -1,0 +1,16 @@
+interface:
+  display_name: "Generate Bambu"
+  short_description: "Modela no Fusion e prepara impressão multicor no Bambu Studio"
+  brand_color: "#00AE42"
+  default_prompt: "Modele uma peça para impressão 3D multicor"
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "fusion"
+      description: "Servidor MCP local do Autodesk Fusion"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:27182/mcp"

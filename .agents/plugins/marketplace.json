@@ -1,0 +1,20 @@
+{
+  "name": "grolla05-plugins",
+  "interface": {
+    "displayName": "Grolla05"
+  },
+  "plugins": [
+    {
+      "name": "generate-bambu",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
