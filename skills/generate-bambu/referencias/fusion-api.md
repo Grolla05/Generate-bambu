@@ -3,6 +3,9 @@
 Consulta. Pule para a seção que a peça pede. Tudo aqui foi rodado no Fusion
 do usuário (versão 2705, Python 3.14) pelo `fusion_mcp_execute`.
 
+Peça inteira pronta para chaveiro, porta-copo, placa com texto, vaso e caixa com
+tampa: `modelos/`, com parâmetros no topo. Parta dela quando o pedido casar.
+
 ---
 
 ## Contrato do script
@@ -162,7 +165,9 @@ removendo a face de cima, espessura `'1.2 mm'`.
 arestas = adsk.core.ObjectCollection.create()
 for ed in b1.edges:
     s, t = ed.startVertex.geometry, ed.endVertex.geometry
-    if abs(s.x-t.x) < 1e-6 and abs(s.y-t.y) < 1e-6:     # arestas verticais
+    # vertical = mesmo x e y, z diferente; sem o z, a borda circular do furo
+    # (início == fim) entra junto e o fillet falha
+    if abs(s.x-t.x) < 1e-6 and abs(s.y-t.y) < 1e-6 and abs(s.z-t.z) > 1e-6:
         arestas.add(ed)
 # fillet ANTES das camadas de cor: depois, o relevo pode ficar para fora da borda
 fi = root.features.filletFeatures.createInput()
@@ -293,6 +298,10 @@ interferência; volume sobreposto conta, e é defeito: cor misturada na mesma re
 `iso-top-right`, `front`, `top` (e `bottom` se a face de baixo importar),
 `width: 800, height: 500`. Antes, enquadre: `app.activeViewport.fit()` no fim
 do script de modelagem.
+
+**Pegadinha testada:** com o Fusion em **Y para cima** (o padrão de muitas
+instalações), a vista `top` mostra a peça de lado e quem mostra o topo é `front`.
+Se `top` vier com a peça fina como uma linha, use `front`.
 
 ---
 

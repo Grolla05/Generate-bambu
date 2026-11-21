@@ -48,6 +48,7 @@ Arquivos desta skill (leia sob demanda):
 | Arquivo | Quando |
 |---|---|
 | `referencias/fusion-api.md` | peça no Fusion — receitas testadas de script, validação, cor, exportação |
+| `modelos/` | peça no Fusion que casa com chaveiro, porta-copo, placa com texto, vaso ou caixa com tampa — ponto de partida já testado |
 | `referencias/blender-api.md` | peça no Blender — receitas testadas |
 | `helpers/blender_3mf.py` | peça no Blender — importe no script |
 | `scripts/detectar_modeladores.py` | passo 0 — qual modelador usar |
@@ -154,6 +155,10 @@ usuário aprova a peça que vai sair, não a que foi pedida.
 o código precisa definir `run(context)`, e a API trabalha em **centímetro**.
 Prefira scripts curtos, um por etapa (base, relevo, texto, acabamento), para
 que um `undo` desfaça só a última.
+
+**Se a peça casa com um modelo de `modelos/`**, parta dele: copie o arquivo, mude só
+o bloco de parâmetros do topo e rode inteiro, num script só. Ele já cria o documento
+(1a) e segue o contrato abaixo. O que o modelo não cobre entra como script seguinte.
 
 Contrato de corpos — é dele que o resto do fluxo depende:
 

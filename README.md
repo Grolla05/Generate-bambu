@@ -342,6 +342,7 @@ Generate-bambu/
 │       │   ├── bambu-cliques.md    # plano B por cliques
 │       │   ├── fdm-a1.md           # espessuras, folgas, orientação e balanços da A1
 │       │   └── limites.md          # triagem do que cabe (ou não) no método
+│       ├── modelos/                # peças-base testadas no Fusion, parâmetros no topo
 │       ├── helpers/
 │       │   ├── agrupar_3mf.py      # agrupa o 3MF em um objeto por slot
 │       │   └── blender_3mf.py      # roda no Blender: valida e exporta
@@ -433,7 +434,7 @@ pytest
 - [x] Suporte a outras impressoras da linha Bambu Lab (A1 mini e P1S, conferidas só até o fatiamento)
 - [x] Perfil de impressão salvo junto com o projeto
 - [ ] Conferir a exportação por script com o Fusion real
-- [ ] Biblioteca de peças-base (chaveiro, porta-copo, placa) como pontos de partida
+- [x] Biblioteca de peças-base (chaveiro, porta-copo, placa, vaso, caixa) como pontos de partida
 - [ ] Avaliações que comparam como cada agente respeita as paradas obrigatórias
 - [ ] Versão em inglês da documentação
 
