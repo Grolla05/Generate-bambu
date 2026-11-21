@@ -211,7 +211,7 @@ def test_repositorio_publico_nao_carrega_o_negocio():
 
 def test_prefixo_antigo_de_cor_so_existe_na_leitura():
     arquivos = subprocess.run(
-        ["git", "grep", "-il", "bubble", "--", "skills", "README.md"],
+        ["git", "grep", "-il", "bubble", "--", "skills", "README.md", "README.pt-BR.md"],
         cwd=RAIZ, capture_output=True, text=True, check=False,
     ).stdout.split()
 

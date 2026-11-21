@@ -2,9 +2,11 @@
 
 # 🖨️ generate-bambu
 
-**Peça uma peça. Seu agente modela no Fusion ou no Blender, valida, exporta o `.3mf` multicor, fatia e deixa pronto no Bambu Studio.**
+**🇺🇸 English** · [🇧🇷 Português](README.pt-BR.md)
 
-*Uma skill para Claude, Codex, Gemini CLI e Antigravity que leva uma ideia da conversa até a mesa da impressora, com você aprovando cada passo importante.*
+**Ask for a part. Your agent models it in Fusion or Blender, validates it, exports a multicolor `.3mf`, slices it and leaves it ready in Bambu Studio.**
+
+*A skill for Claude, Codex, Gemini CLI and Antigravity that takes an idea from the chat to the print bed, with you approving every step that matters.*
 
 <br>
 
@@ -13,144 +15,106 @@
 ![Autodesk Fusion](https://img.shields.io/badge/Autodesk-Fusion-FF6C00?style=for-the-badge&logo=autodesk&logoColor=white)
 ![Bambu Lab](https://img.shields.io/badge/Bambu%20Lab-A1%20%2B%20AMS%20Lite-00AE42?style=for-the-badge)
 
-![Camada](https://img.shields.io/badge/camada-0%2C12%20mm-informational?style=flat-square)
+![Layer](https://img.shields.io/badge/layer-0.12%20mm-informational?style=flat-square)
 ![Volume](https://img.shields.io/badge/volume-250%C3%97250%C3%97250%20mm-informational?style=flat-square)
-![Formato](https://img.shields.io/badge/sa%C3%ADda-.3mf%20multicor-informational?style=flat-square)
-![Plataforma](https://img.shields.io/badge/plataforma-Windows-0078D4?style=flat-square)
+![Output](https://img.shields.io/badge/output-multicolor%20.3mf-informational?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 [![CI](https://github.com/Grolla05/Generate-bambu/actions/workflows/ci.yml/badge.svg)](https://github.com/Grolla05/Generate-bambu/actions/workflows/ci.yml)
 ![Stars](https://img.shields.io/github/stars/Grolla05/Generate-bambu?style=flat-square)
 ![Last commit](https://img.shields.io/github/last-commit/Grolla05/Generate-bambu?style=flat-square)
 
-[Como funciona](#-como-funciona) •
-[Demonstração](#-demonstração) •
-[Instalação](#-instalação) •
-[Como usar](#-como-usar) •
-[Decisões de design](#-decisões-de-design) •
-[Limitações](#-limitações)
+[How it works](#%EF%B8%8F-how-it-works) •
+[Demo](#-demo) •
+[Installation](#-installation) •
+[Usage](#%EF%B8%8F-usage) •
+[Design decisions](#-design-decisions) •
+[Limitations](#%EF%B8%8F-limitations)
 
 </div>
 
 ---
 
-## 💡 Sobre
+## 💡 About
 
-Este projeto nasceu de um problema simples: **comprei uma impressora 3D sem saber modelar nos mínimos detalhes**. Eu tinha só uma noção básica, e o gargalo nunca foi a máquina, foi o conhecimento de modelagem.
+This project started from a simple problem: **I bought a 3D printer without knowing how to model in fine detail**. I only had a basic idea, and the bottleneck was never the machine, it was modeling know-how.
 
-A solução foi transformar o processo em uma **skill**: uma sequência fixa de seis passos que vai do pedido em linguagem natural até o projeto fatiado no Bambu Studio. O agente cuida da parte repetitiva e técnica. As decisões que importam continuam sendo suas: **você aprova a forma antes de exportar e confirma antes de imprimir**.
+The answer was to turn the process into a **skill**: a fixed six-step sequence that goes from a plain-language request to a sliced project in Bambu Studio. The agent handles the repetitive, technical part. The decisions that matter stay with you: **you approve the shape before export and you confirm before printing**.
 
 > [!NOTE]
-> **Geometria construída** (placas, letreiros, chaveiros, ímãs, vasos, caixas, suportes, engrenagens, peças com rosca ou encaixe) vai para o Fusion. **Forma orgânica estilizada** (bichos e bonecos low-poly) vai para o Blender. Realismo fica fora do método (veja [Limitações](#-limitações)).
+> **Constructed geometry** (plates, signs, keychains, magnets, vases, boxes, brackets, gears, threaded or snap-fit parts) goes to Fusion. **Stylized organic shapes** (low-poly animals and figures) go to Blender. Realism is out of scope (see [Limitations](#%EF%B8%8F-limitations)).
+>
+> The skill itself speaks Portuguese (its instructions and messages are in pt-BR), but it triggers on requests in English as well.
 
 ---
 
-## ⚙️ Como funciona
+## ⚙️ How it works
 
 ```mermaid
 flowchart LR
-    A["💬 Você pede a peça"] --> B["🧩 1. Modela no Fusion ou no Blender"]
-    B --> C["✅ Valida e mostra"]
-    C --> D{"👤 2. Você aprova?"}
-    D -- "pede ajuste" --> B
-    D -- "OK" --> E["📦 3. Exporta .3mf"]
-    E --> F["🔪 4. Fatia por script"]
-    F --> G["🔍 5. Abre e confere"]
-    G --> H["⏱️ 6. Tempo e gramas"]
-    H --> I["👤 Você clica em Print plate"]
+    A["💬 You ask for a part"] --> B["🧩 1. Model in Fusion or Blender"]
+    B --> C["✅ Validate and show"]
+    C --> D{"👤 2. Approved?"}
+    D -- "asks for changes" --> B
+    D -- "OK" --> E["📦 3. Export .3mf"]
+    E --> F["🔪 4. Slice by script"]
+    F --> G["🔍 5. Open and check"]
+    G --> H["⏱️ 6. Time and grams"]
+    H --> I["👤 You click Print plate"]
 ```
 
-| # | Passo | O que acontece |
+| # | Step | What happens |
 |:-:|---|---|
-| **1** | 🧩 **Modelar, validar e mostrar** | O agente cria um design **paramétrico** no Fusion, via script. Cada cor é um corpo separado (`slotN_descricao`). Roda uma validação automática e deixa a peça aberta no Fusion para você girar e inspecionar. |
-| **2** | 👤 **Esperar o OK** | Parada obrigatória. Se pedir ajuste, o agente muda os parâmetros no **mesmo documento**, valida de novo e salva uma nova versão. |
-| **3** | 📦 **Exportar o `.3mf`** | Só depois do OK. Um único `.3mf` com **um objeto por slot do AMS**, camada de 0,12 mm. Sem STL, sem ZIP, sem pasta de arquivos soltos. |
-| **4** | 🔪 **Fatiar por script** | `scripts/fatiar.py` usa o CLI do Bambu Studio, sem clique e sem diálogo, e confere camada, filamentos e **dimensões**. Funciona em qualquer agente com terminal. |
-| **5** | 🔍 **Abrir e conferir** | O fatiado abre no Bambu Studio já colorido, para você conferir. |
-| **6** | ⏱️ **Pronto para imprimir** | Mostra o **tempo estimado** e os **gramas por filamento**. **A skill nunca imprime:** quem clica em *Print plate* é você. |
+| **1** | 🧩 **Model, validate and show** | The agent builds a **parametric** design in Fusion, by script. Each color is a separate body (`slotN_description`). An automatic validation runs and the part stays open in Fusion for you to rotate and inspect. |
+| **2** | 👤 **Wait for the OK** | Mandatory stop. If you ask for changes, the agent edits the parameters in the **same document**, validates again and saves a new version. |
+| **3** | 📦 **Export the `.3mf`** | Only after the OK. A single `.3mf` with **one object per AMS slot**, 0.12 mm layers. No STL, no ZIP, no folder of loose files. |
+| **4** | 🔪 **Slice by script** | `scripts/fatiar.py` uses the Bambu Studio CLI, with no clicks and no dialogs, and checks layer height, filaments and **dimensions**. Works in any agent with a terminal. |
+| **5** | 🔍 **Open and check** | The sliced file opens in Bambu Studio already colored, for you to check. |
+| **6** | ⏱️ **Ready to print** | Shows the **estimated time** and **grams per filament**. **The skill never prints:** you are the one who clicks *Print plate*. |
 
-### ✅ O que a validação garante (passo 1)
+### ✅ What validation guarantees (step 1)
 
-- Todo corpo é sólido e tem o prefixo `slotN_`
-- Alturas em **múltiplos da camada** (0,12 mm)
-- Peça inteira dentro de **250 × 250 × 250 mm** (Bambu Lab A1)
-- No máximo **4 slots** de cor (AMS Lite)
-- **Nenhuma interferência** entre corpos e nenhuma cor padrão do Fusion
-- Espessuras mínimas e balanços conferidos contra as regras de FDM da A1
+- Every body is solid and has the `slotN_` prefix
+- Heights are **multiples of the layer height** (0.12 mm)
+- The whole part fits in **250 × 250 × 250 mm** (Bambu Lab A1)
+- At most **4 color slots** (AMS Lite)
+- **No interference** between bodies and no default Fusion color
+- Minimum thicknesses and overhangs checked against the A1 FDM rules
 
----
+### 🧱 Base parts
 
-## 🎬 Demonstração
-
-> [!TIP]
-> Substitua as imagens abaixo pelas suas capturas. Basta salvar os arquivos em `docs/images/` com os nomes indicados e o README passa a exibi-los.
-
-### Do pedido à peça
-
-<div align="center">
-
-<img src="docs/images/demo.gif" alt="GIF mostrando o fluxo completo: do pedido ao agente até a peça fatiada no Bambu Studio" width="85%">
-
-<sub><i>Fluxo completo, do pedido ao slice (GIF)</i></sub>
-
-</div>
-
-### Passo a passo
-
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="docs/images/01-pedido.png" alt="Conversa com o agente pedindo a peça" width="100%"><br>
-      <b>1. O pedido</b><br>
-      <sub>Linguagem natural, sem precisar saber modelar</sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="docs/images/02-fusion-modelagem.png" alt="Peça paramétrica aberta no Autodesk Fusion" width="100%"><br>
-      <b>2. Modelagem no Fusion</b><br>
-      <sub>Design paramétrico, um corpo por cor</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" colspan="2">
-      <img src="docs/images/05-bambu-studio-cores.png" alt="Bambu Studio com a prévia colorida do projeto" width="50%"><br>
-      <b>3. Bambu Studio</b><br>
-      <sub>Cores por slot e dimensões conferidas</sub>
-    </td>
-  </tr>
-</table>
-
-### Resultado
-
-<div align="center">
-
-<img src="docs/images/peca-impressa.jpg" alt="Foto da peça impressa em multicor" width="60%">
-
-<sub><i>A peça final impressa na Bambu Lab A1 com AMS Lite</i></sub>
-
-</div>
+For the most common requests the agent doesn't start from scratch: [`modelos/`](skills/generate-bambu/modelos/) has five scripts already run and validated in Fusion (keychain, coaster, sign with text, vase, box with lid). It changes only the parameter block at the top and runs the file.
 
 ---
 
-## 📋 Requisitos
+## 🎬 Demo
 
-| Requisito | Detalhe |
+> [!NOTE]
+> Screenshots and a GIF of the full flow are on the way. Meanwhile, the flowchart in [How it works](#%EF%B8%8F-how-it-works) shows each step. The list of captures still missing is in [`docs/images/CAPTURAS.md`](docs/images/CAPTURAS.md).
+
+---
+
+## 📋 Requirements
+
+| Requirement | Detail |
 |---|---|
-| 🤖 **Agente** | Claude, Codex, Gemini CLI ou Antigravity |
-| 🧩 **Autodesk Fusion** | Para peça de medida exata. Instalado, com o **servidor MCP local** ativo em Preferences → General → API → Fusion MCP Server (*Apply* e depois *OK*) |
-| 🐒 **Blender** | Opcional, para forma orgânica estilizada. 5.1 ou mais novo; roda por terminal, com MCP opcional |
-| 🖨️ **Impressora** | Bambu Lab **A1** com **AMS Lite** (até 4 cores) |
-| 🖥️ **Bambu Studio** | Instalado (testado na 02.08.03.66) |
-| 🐍 **Python** | 3.10 ou mais novo, para fatiar pelo CLI. Sem ele, vale o [plano B por cliques](skills/generate-bambu/referencias/bambu-cliques.md) |
-| 🪟 **Sistema** | Windows (os caminhos e o fluxo do Bambu Studio foram testados nele) |
-| 🖱️ **Controle do computador** | Opcional, só para o plano B. Nunca clica em *Print plate* |
+| 🤖 **Agent** | Claude, Codex, Gemini CLI or Antigravity |
+| 🧩 **Autodesk Fusion** | For exact-dimension parts. Installed, with the **local MCP server** enabled under Preferences → General → API → Fusion MCP Server (*Apply*, then *OK*) |
+| 🐒 **Blender** | Optional, for stylized organic shapes. 5.1 or newer; runs from the terminal, MCP optional |
+| 🖨️ **Printer** | Bambu Lab **A1** with **AMS Lite** (up to 4 colors) |
+| 🖥️ **Bambu Studio** | Installed (tested on 02.08.03.66) |
+| 🐍 **Python** | 3.10 or newer, to slice through the CLI. Without it, use the [click-based plan B](skills/generate-bambu/referencias/bambu-cliques.md) |
+| 🪟 **OS** | Windows (paths and the Bambu Studio flow were tested on it) |
+| 🖱️ **Computer control** | Optional, only for plan B. Never clicks *Print plate* |
 
 > [!IMPORTANT]
-> O que muda entre agentes está em [`referencias/agentes.md`](skills/generate-bambu/referencias/agentes.md).
+> What changes between agents is in [`referencias/agentes.md`](skills/generate-bambu/referencias/agentes.md).
 
 ---
 
-## 🚀 Instalação
+## 🚀 Installation
 
-Use **um canal só por agente**. Plugin e cópia da pasta juntos criam skills duplicadas.
+Use **only one channel per agent**. Installing the plugin and copying the folder creates duplicate skills.
 
 ### Claude
 
@@ -162,9 +126,9 @@ claude plugin marketplace add Grolla05/Generate-bambu
 claude plugin install generate-bambu@grolla05-plugins
 ```
 
-No app desktop, adicione `Grolla05/Generate-bambu` como marketplace pela tela de plugins. A chamada direta é `/generate-bambu:generate-bambu`.
+In the desktop app, add `Grolla05/Generate-bambu` as a marketplace from the plugins screen. The direct call is `/generate-bambu:generate-bambu`.
 
-O plugin não traz o MCP do Fusion: use a extensão Autodesk Fusion do app, ou rode `instalar.ps1 -McpClaude` para registrá-lo no Claude Code.
+The plugin does not ship the Fusion MCP: use the app's Autodesk Fusion extension, or run `instalar.ps1 -McpClaude` to register it in Claude Code.
 
 ### Codex
 
@@ -176,7 +140,7 @@ codex plugin marketplace add Grolla05/Generate-bambu
 codex plugin add generate-bambu@grolla05-plugins
 ```
 
-No app, o mesmo marketplace aparece na tela de plugins. O plugin já traz o MCP do Fusion.
+In the app, the same marketplace shows up on the plugins screen. The plugin already ships the Fusion MCP.
 
 ### Gemini CLI
 
@@ -184,7 +148,7 @@ No app, o mesmo marketplace aparece na tela de plugins. O plugin já traz o MCP 
 gemini extensions install https://github.com/Grolla05/Generate-bambu
 ```
 
-A extensão já traz o MCP do Fusion. O Gemini CLI parou de atender contas individuais em junho de 2026: sem chave de API ou conta enterprise, use o Antigravity.
+The extension already ships the Fusion MCP. Gemini CLI stopped serving individual accounts in June 2026: without an API key or an enterprise account, use Antigravity.
 
 ### Antigravity
 
@@ -196,11 +160,11 @@ git clone https://github.com/Grolla05/Generate-bambu
 agy plugin install ./Generate-bambu
 ```
 
-O plugin já traz o MCP do Fusion.
+The plugin already ships the Fusion MCP.
 
-### Instalador para Windows
+### Windows installer
 
-Sem plugin, o `instalar.ps1` detecta os agentes, copia a skill para a pasta de cada um e grava a configuração do MCP. Ele pula o agente que já tem plugin ou extensão, mostra o plano e pede confirmação.
+Without a plugin, `instalar.ps1` detects your agents, copies the skill into each one's folder and writes the MCP configuration. It skips any agent that already has the plugin or extension, shows the plan and asks for confirmation.
 
 ```bash
 git clone https://github.com/Grolla05/Generate-bambu
@@ -210,18 +174,18 @@ git clone https://github.com/Grolla05/Generate-bambu
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Generate-bambu\instalar.ps1 -Simular
 ```
 
-| Opção | O que faz |
+| Option | What it does |
 |---|---|
-| `-Simular` | Só mostra o plano |
-| `-Agentes codex,antigravity` | Limita aos agentes citados: `claude`, `codex`, `gemini`, `antigravity`, `agy` |
-| `-Sim` | Aplica sem perguntar |
-| `-Desinstalar` | Remove só o que o script instalou |
-| `-McpClaude` | Registra o MCP do Fusion no Claude Code |
+| `-Simular` | Only shows the plan (dry run) |
+| `-Agentes codex,antigravity` | Limits to the listed agents: `claude`, `codex`, `gemini`, `antigravity`, `agy` |
+| `-Sim` | Applies without asking |
+| `-Desinstalar` | Removes only what the script installed |
+| `-McpClaude` | Registers the Fusion MCP in Claude Code |
 
 > [!NOTE]
-> O script faz backup de cada arquivo que altera (`.bak-<data>`), ao lado do original. Esses arquivos têm tokens: não os compartilhe. Arquivo com comentários ou JSON inválido fica intacto, e o script pede para adicionar o MCP à mão. Feche o app do Codex antes de rodar.
+> The script backs up every file it changes (`.bak-<date>`), next to the original. These files contain tokens: don't share them. A file with comments or invalid JSON is left untouched, and the script asks you to add the MCP by hand. Close the Codex app before running it.
 
-### ✔️ Conferindo a instalação
+### ✔️ Checking the installation
 
 ```bash
 claude plugin details generate-bambu
@@ -239,9 +203,9 @@ gemini extensions list
 agy plugin list --json
 ```
 
-### 🔄 Atualizando
+### 🔄 Updating
 
-Quem tem a versão 1.0.0 instalada recebe a nova estrutura pelos mesmos comandos.
+If you have version 1.0.0 installed, the same commands bring in the new structure.
 
 ```bash
 claude plugin marketplace update grolla05-plugins
@@ -263,162 +227,166 @@ codex plugin add generate-bambu@grolla05-plugins
 gemini extensions update generate-bambu
 ```
 
-No Antigravity, atualize o clone e rode `agy plugin install` de novo. Com o instalador, atualize o clone e rode o script de novo.
+In Antigravity, update the clone and run `agy plugin install` again. With the installer, update the clone and run the script again.
 
 ---
 
-## 🕹️ Como usar
+## 🕹️ Usage
 
-Com a skill instalada e o Fusion aberto, basta pedir. Ela é acionada sozinha em qualquer pedido de criar, desenhar ou modelar uma peça para impressão 3D, em português ou inglês.
+With the skill installed and Fusion open, just ask. It triggers on its own for any request to create, draw or model a part for 3D printing, in Portuguese or English.
 
-### Exemplos de pedidos
+### Example requests
 
 ```text
-Faz um chaveiro retangular de 60 x 30 mm com o nome "Felipe" em relevo,
-base azul e letras brancas.
+Make a 60 x 30 mm rectangular keychain with the name "Felipe" raised,
+blue base and white letters.
 ```
 
 ```text
-Preciso de um porta-copo redondo de 90 mm com um brasão em relevo de duas cores.
+I need a round 90 mm coaster with a two-color raised crest.
 ```
 
 ```text
-Modela um vaso de 80 mm de altura com parede de 2 mm, em uma cor só.
+Model an 80 mm tall vase with a 2 mm wall, in a single color.
 ```
 
 ```text
-Cria uma lembrancinha de 70 x 50 mm com a data "12/10" e uma moldura em dourado.
+Create a 70 x 50 mm party favor with the date "12/10" and a gold frame.
 ```
 
-### O que esperar na conversa
+### What to expect in the conversation
 
-1. O agente confirma o que vai modelar e quantas cores a peça tem.
-2. A peça aparece **aberta no Fusion**, com as dimensões finais, a lista de slots (cor, altura, camadas) e os ajustes de camada que foram feitos.
-3. Ele pergunta se está aprovado. Você pede ajustes quantas vezes quiser.
-4. Com o OK, exporta, fatia e mostra **tempo e gramas**. Quem manda imprimir é você, no Bambu Studio.
-5. Ele pergunta **"posso mandar imprimir?"** e espera a sua resposta.
+1. The agent confirms what it is going to model and how many colors the part has.
+2. The part appears **open in Fusion**, with the final dimensions, the list of slots (color, height, layers) and any layer adjustments made.
+3. It asks whether you approve. Ask for changes as many times as you want.
+4. With the OK, it exports, slices and shows **time and grams**. Printing is up to you, in Bambu Studio.
+5. It asks **"can I send it to print?"** and waits for your answer.
 
 ---
 
-## 🧠 Decisões de design
+## 🧠 Design decisions
 
-| Decisão | Por quê |
+| Decision | Why |
 |---|---|
-| 🧩 **Modelagem só pelo Fusion** | Nada de SVG, malha gerada em código ou OpenSCAD. A peça precisa ser editável de verdade: mudar uma medida é editar um parâmetro, não refazer o desenho. |
-| 📐 **Alturas em múltiplos da camada** | O slicer não sabe fazer 0,8 mm numa camada de 0,12 mm. A skill arredonda (0,8 mm vira 0,84 mm) e **avisa cada ajuste**, para você aprovar a peça que realmente vai sair. |
-| 🎨 **Um corpo por cor, um objeto por slot** | A cor vai pintada na malha do `.3mf`, e cada slot do AMS vira um objeto. O Bambu Studio já abre o projeto com as cores certas. |
-| 🛑 **Duas paradas obrigatórias** | Aprovar a forma (passo 2) e autorizar a impressão (passo 6). Plástico e horas de máquina só são gastos com a sua confirmação. |
-| 👁️ **Nada "de memória"** | Se o agente fala do que está na tela do Fusion ou do Bambu Studio, é porque capturou a tela e leu, ou porque você informou. Se não conseguiu, ele diz que não conseguiu. |
-| 🔌 **Um repositório, vários agentes** | A skill mora em `skills/` e cada agente tem seu manifesto. Os testes conferem que nome, versão e URL do MCP são iguais em todos. |
-| 🧭 **Capacidades, não ferramentas** | O `SKILL.md` descreve a ação; `referencias/agentes.md` traduz para a ferramenta de cada agente. |
-| 📏 **Conferência de unidade** | As dimensões no Bambu Studio têm que bater com o Fusion. Uma peça 1000× maior ou menor indica erro de unidade, e a correção é refazer a exportação, nunca escalar no slicer. |
-| ⚖️ **Design de terceiros fica de fora** | Personagens, marcas, carros e logos pertencem a outras pessoas. A skill oferece um desenho **original** no lugar. |
+| 🧩 **Modeling only in Fusion (or Blender)** | No SVG, code-generated mesh or OpenSCAD. The part has to be truly editable: changing a dimension means editing a parameter, not redrawing. |
+| 📐 **Heights in multiples of the layer** | The slicer can't make 0.8 mm with 0.12 mm layers. The skill rounds (0.8 mm becomes 0.84 mm) and **reports every adjustment**, so you approve the part that will actually come out. |
+| 🎨 **One body per color, one object per slot** | The color is painted on the `.3mf` mesh, and each AMS slot becomes one object. Bambu Studio opens the project with the right colors. |
+| 🛑 **Two mandatory stops** | Approve the shape (step 2) and authorize printing (step 6). Plastic and machine hours are only spent with your confirmation. |
+| 👁️ **Nothing "from memory"** | If the agent talks about what is on screen in Fusion or Bambu Studio, it captured the screen and read it, or you told it. If it couldn't, it says so. |
+| 🔌 **One repository, many agents** | The skill lives in `skills/` and each agent has its own manifest. Tests check that name, version and MCP URL match across all of them. |
+| 🧭 **Capabilities, not tools** | `SKILL.md` describes the action; `referencias/agentes.md` translates it into each agent's tool. |
+| 📏 **Unit check** | Dimensions in Bambu Studio must match Fusion. A part 1000× bigger or smaller means a unit error, and the fix is to redo the export, never to scale in the slicer. |
+| ⚖️ **Third-party designs stay out** | Characters, brands, cars and logos belong to other people. The skill offers an **original** design instead. |
+| 🧪 **Stops are evaluated per agent** | [`evals/`](evals/) has standard requests and a scoring rubric to compare how each agent respects the stops, where models diverge the most. |
 
 ---
 
-## 🗂️ Estrutura do repositório
+## 🗂️ Repository structure
 
 ```text
 Generate-bambu/
 ├── .agents/plugins/
-│   └── marketplace.json            # Codex: catálogo
+│   └── marketplace.json            # Codex: catalog
 ├── .antigravity-plugin/
-│   └── plugin.json                 # Antigravity: manifesto
+│   └── plugin.json                 # Antigravity: manifest
 ├── .claude-plugin/
-│   ├── marketplace.json            # Claude: catálogo
-│   └── plugin.json                 # Claude: manifesto
+│   ├── marketplace.json            # Claude: catalog
+│   └── plugin.json                 # Claude: manifest
 ├── .codex-plugin/
-│   └── plugin.json                 # Codex: manifesto
+│   └── plugin.json                 # Codex: manifest
 ├── skills/
 │   └── generate-bambu/
-│       ├── SKILL.md                # o fluxo de seis passos
-│       ├── config.example.json     # modelo da configuração local
+│       ├── SKILL.md                # the six-step flow
+│       ├── config.example.json     # template for the local configuration
 │       ├── agents/
-│       │   └── openai.yaml         # Codex: dependência do MCP e invocação
+│       │   └── openai.yaml         # Codex: MCP dependency and invocation
 │       ├── referencias/
-│       │   ├── agentes.md          # capacidades, instalação e MCP por agente
-│       │   ├── fusion-api.md       # receitas testadas de script, validação e exportação
-│       │   ├── blender-api.md      # receitas testadas para forma orgânica
-│       │   ├── bambu-cliques.md    # plano B por cliques
-│       │   ├── fdm-a1.md           # espessuras, folgas, orientação e balanços da A1
-│       │   └── limites.md          # triagem do que cabe (ou não) no método
-│       ├── modelos/                # peças-base testadas no Fusion, parâmetros no topo
+│       │   ├── agentes.md          # capabilities, installation and MCP per agent
+│       │   ├── fusion-api.md       # tested recipes for scripting, validation and export
+│       │   ├── blender-api.md      # tested recipes for organic shapes
+│       │   ├── bambu-cliques.md    # click-based plan B
+│       │   ├── fdm-a1.md           # A1 thicknesses, clearances, orientation and overhangs
+│       │   └── limites.md          # triage of what fits (or not) the method
+│       ├── modelos/                # base parts tested in Fusion, parameters at the top
 │       ├── helpers/
-│       │   ├── agrupar_3mf.py      # agrupa o 3MF em um objeto por slot
-│       │   └── blender_3mf.py      # roda no Blender: valida e exporta
+│       │   ├── agrupar_3mf.py      # groups the 3MF into one object per slot
+│       │   └── blender_3mf.py      # runs inside Blender: validates and exports
 │       └── scripts/
-│           ├── config.py           # configuração local e access code
-│           ├── diagnostico.py      # o que está pronto nesta máquina
-│           ├── detectar_modeladores.py  # qual modelador usar
-│           ├── fatiar.py           # fatia pelo CLI do Bambu Studio
-│           ├── projeto_bambu.py    # monta o projeto nativo
-│           ├── perfis.py           # resolve os perfis instalados
-│           ├── bambu_3mf.py        # lê tempo e gramas do fatiado
-│           └── status.py           # estado da impressora, só leitura
+│           ├── config.py           # local configuration and access code
+│           ├── diagnostico.py      # what is ready on this machine
+│           ├── detectar_modeladores.py  # which modeler to use
+│           ├── fatiar.py           # slices through the Bambu Studio CLI
+│           ├── projeto_bambu.py    # builds the native project
+│           ├── perfis.py           # resolves the installed profiles
+│           ├── bambu_3mf.py        # reads time and grams from the sliced file
+│           ├── registro.py         # local log of every sliced part
+│           └── status.py           # printer status, read-only
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                  # CI: lint, validação da skill, testes e instalador
-├── tests/                          # testes do helper, da documentação, dos manifestos e do instalador
+│       └── ci.yml                  # CI: lint, skill validation, tests and installer
+├── evals/                          # cases and rubric to compare agents
+├── tests/                          # tests for the helper, docs, manifests and installer
 ├── docs/
-│   └── images/                     # capturas de tela e GIFs da demonstração
-├── gemini-extension.json           # Gemini CLI: manifesto
-├── instalar.ps1                    # instalador para Windows
-├── mcp.json                        # MCP do Fusion para Codex e Antigravity
-├── pyproject.toml                  # configuração do pytest e do ruff
-├── requirements-dev.txt            # pytest e ruff
+│   └── images/                     # screenshots and GIFs for the demo
+├── gemini-extension.json           # Gemini CLI: manifest
+├── instalar.ps1                    # Windows installer
+├── mcp.json                        # Fusion MCP for Codex and Antigravity
+├── pyproject.toml                  # pytest and ruff configuration
+├── requirements-dev.txt            # pytest and ruff
 ├── LICENSE
-└── README.md
+├── README.md                       # English
+└── README.pt-BR.md                 # Portuguese
 ```
 
 ---
 
-## ⚙️ Configuração
+## ⚙️ Configuration
 
-A configuração fica em `~/.generate-bambu/config.json`, fora da skill, porque atualizar o plugin troca a pasta dela. O modelo é [`config.example.json`](skills/generate-bambu/config.example.json):
+The configuration lives in `~/.generate-bambu/config.json`, outside the skill, because updating the plugin replaces its folder. The template is [`config.example.json`](skills/generate-bambu/config.example.json):
 
 ```bash
-python skills/generate-bambu/scripts/config.py definir pasta_saida "D:/Impressao3D"
+python skills/generate-bambu/scripts/config.py definir pasta_saida "D:/Print3D"
 ```
 
-O access code da impressora só é necessário para `status.py`. Rode `config.py codigo` você mesmo, no terminal, para ele não passar pela conversa.
+The printer access code is only needed for `status.py`. Run `config.py codigo` yourself, in the terminal, so it never goes through the chat.
 
-| O quê | Padrão | Observação |
+| What | Default | Note |
 |---|---|---|
-| Pasta de saída dos `.3mf` | perguntada no primeiro uso | Chave `pasta_saida` |
-| Perfis do Bambu Studio | A1, `0.12mm Fine`, PLA Basic | Seção `bambu_studio` |
-| Modelador | escolhido peça a peça | `modelador.preferido` desempata |
-| Projeto no Fusion | `generate-bambu` | Chave `fusion.projeto`; criado automaticamente se não existir |
-| Impressora | A1 | `config.py maquina "A1 mini"` ou `"P1S"` grava limites e perfis juntos; essas duas foram conferidas só até o fatiamento |
-| Altura de camada | `0,12 mm` | Parâmetro `camada` no início do design |
-| Perfil | sem perfil | `~/.generate-bambu/perfil.md`, com o seu contexto. Modelo em [`perfil.example.md`](skills/generate-bambu/perfil.example.md) |
+| Output folder for `.3mf` files | asked on first use | Key `pasta_saida` |
+| Bambu Studio profiles | A1, `0.12mm Fine`, PLA Basic | Section `bambu_studio` |
+| Modeler | chosen per part | `modelador.preferido` breaks ties |
+| Fusion project | `generate-bambu` | Key `fusion.projeto`; created automatically if missing |
+| Printer | A1 | `config.py maquina "A1 mini"` or `"P1S"` writes limits and profiles together; those two were checked only up to slicing |
+| Layer height | `0.12 mm` | `camada` parameter at the start of the design |
+| Profile | none | `~/.generate-bambu/perfil.md`, with your own context. Template in [`perfil.example.md`](skills/generate-bambu/perfil.example.md) |
 
 ---
 
-## ⚠️ Limitações
+## ⚠️ Limitations
 
-- **Só geometria construída.** O Fusion faz booleana, fillet, chamfer, shell, rosca e texto. Rosto, corpo e animal realista não cabem no método.
-- **Até 4 cores**, pelos 4 slots do AMS Lite. Acima de 2 cores, o custo de purga de filamento sobe.
-- **Volume de 250 × 250 × 250 mm**, o limite da Bambu Lab A1.
-- **O perfil de impressão não vem no `.3mf`.** A altura de camada de 0,12 mm é ajustada no Bambu Studio a cada projeto.
-- **Controle de tela é opcional e frágil.** Só entra como plano B, se o fatiamento por script falhar. Se um clique não faz efeito, a skill para e pergunta, em vez de repetir às cegas. Ele nunca clica em *Print plate*.
-- **Peça multicor que ocupa quase a mesa inteira nos dois lados é recusada:** falta lugar para a torre de purga.
-- **Licença do Fusion.** Com a licença *Education* (uso não comercial), as peças servem para uso próprio e presentes. Para **vender** o que for impresso, revise a licença do Fusion antes.
+- **Constructed geometry only.** Fusion does booleans, fillets, chamfers, shells, threads and text. Faces, bodies and realistic animals don't fit the method.
+- **Up to 4 colors**, from the 4 AMS Lite slots. Above 2 colors, filament purge cost goes up.
+- **250 × 250 × 250 mm volume**, the Bambu Lab A1 limit.
+- **The print profile doesn't travel inside the `.3mf`.** The 0.12 mm layer height is set in Bambu Studio for each project.
+- **Screen control is optional and fragile.** It only comes in as plan B, if script slicing fails. If a click has no effect, the skill stops and asks instead of retrying blindly. It never clicks *Print plate*.
+- **A multicolor part that covers almost the whole bed on both axes is refused:** there is no room for the purge tower.
+- **Fusion license.** With the *Education* license (non-commercial use), parts are fine for personal use and gifts. To **sell** what you print, review your Fusion license first.
 
 ---
 
-## 🧪 Testes e CI
+## 🧪 Tests and CI
 
-A cada push e pull request, o GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)) roda:
+On every push and pull request, GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)) runs:
 
-| Job | O que valida |
+| Job | What it checks |
 |---|---|
-| **Lint** | `ruff check` em todo o código Python e `agentskills validate` na skill |
-| **Testes** | `compileall` e `pytest` em Python **3.10, 3.11, 3.12 e 3.13** |
-| **Instalador** | `instalar.ps1` no PowerShell 5.1 do Windows, contra uma pasta de usuário falsa |
+| **Lint** | `ruff check` on all Python code and `agentskills validate` on the skill |
+| **Tests** | `compileall` and `pytest` on Python **3.10, 3.11, 3.12 and 3.13** |
+| **Installer** | `instalar.ps1` on Windows PowerShell 5.1, against a fake user folder |
 
-Os testes cobrem o `agrupar_3mf.py` com 3MFs sintéticos (agrupamento por slot, volumes, malhas fechadas, cores, transformações e as recusas de entrada inválida), a sintaxe dos trechos Python da documentação, a consistência dos manifestos de cada agente e o instalador.
+Tests cover `agrupar_3mf.py` with synthetic 3MFs (grouping by slot, volumes, closed meshes, colors, transforms and rejection of invalid input), the syntax of the Python snippets in the docs, the shape of the base parts, the evaluation cases, consistency of each agent's manifest, and the installer.
 
-Para rodar localmente:
+To run locally:
 
 ```bash
 pip install -r requirements-dev.txt
@@ -430,33 +398,34 @@ pytest
 
 ## 🛣️ Roadmap
 
-- [ ] Placa de calibração para medir a folga real de processo da máquina
-- [x] Suporte a outras impressoras da linha Bambu Lab (A1 mini e P1S, conferidas só até o fatiamento)
-- [x] Perfil de impressão salvo junto com o projeto
-- [ ] Conferir a exportação por script com o Fusion real
-- [x] Biblioteca de peças-base (chaveiro, porta-copo, placa, vaso, caixa) como pontos de partida
-- [ ] Avaliações que comparam como cada agente respeita as paradas obrigatórias
-- [ ] Versão em inglês da documentação
+- [ ] Calibration plate to measure the machine's real process clearance
+- [x] Support for other Bambu Lab printers (A1 mini and P1S, checked only up to slicing)
+- [x] Print profile saved with the project
+- [ ] Verify script export against real Fusion
+- [x] Library of base parts (keychain, coaster, sign, vase, box) as starting points
+- [x] Evaluations comparing how each agent respects the mandatory stops ([`evals/`](evals/))
+- [x] English version of the documentation
+- [ ] Demo screenshots and GIF
 
 ---
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-Ideias, correções e novos tipos de peça são bem-vindos. Abra uma *issue* descrevendo o caso ou envie um *pull request*.
+Ideas, fixes and new part types are welcome. Open an *issue* describing the case or send a *pull request*.
 
-## 📄 Licença
+## 📄 License
 
-Distribuído sob a licença MIT. Veja o arquivo [`LICENSE`](LICENSE).
+Distributed under the MIT license. See [`LICENSE`](LICENSE).
 
-## 👤 Autor
+## 👤 Author
 
-**Felipe Grolla**, estudante de Engenharia de Controle e Automação na PUC-Campinas.
+**Felipe Grolla**, Control and Automation Engineering student at PUC-Campinas.
 
 [![GitHub](https://img.shields.io/badge/GitHub-Grolla05-181717?style=flat-square&logo=github)](https://github.com/Grolla05)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-felipegrolla-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/felipegrolla)
 
 <div align="center">
 
-<sub>Feito com 🧩 Fusion, 🖨️ Bambu Lab e 🤖 Claude</sub>
+<sub>Made with 🧩 Fusion, 🖨️ Bambu Lab and 🤖 Claude</sub>
 
 </div>
